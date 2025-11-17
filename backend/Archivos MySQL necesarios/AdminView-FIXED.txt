@@ -80,7 +80,7 @@ SELECT
         END, 0
       ), 2
     ) > 0 THEN 'Con deuda pendiente'
-    WHEN MAX(a.attendance_pct) < 75 AND c.start_date <= CURDATE() THEN 'Baja asistencia'
+    WHEN MAX(a.attendance_pct) < 75 THEN 'Baja asistencia'
     ELSE 'En regla'
   END AS alert_status
 

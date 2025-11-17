@@ -4,7 +4,7 @@ Este directorio contiene las pruebas automatizadas para verificar el flujo compl
 
 ## Requisitos Previos
 
-1. **Base de datos MySQL**: Asegúrate de que la base de datos `academia_v2` esté creada y las tablas estén inicializadas.
+1. **Base de datos MySQL**: Asegúrate de que la base de datos `academia_final` esté creada y las tablas estén inicializadas.
 2. **Servidor corriendo**: El servidor debe estar ejecutándose en `http://localhost:4000`
 3. **Variables de entorno**: Asegúrate de tener un archivo `.env` con `JWT_SECRET` configurado
 4. **Dependencias**: Ejecuta `npm install` en el directorio `backend`
@@ -93,7 +93,7 @@ Al final se mostrará un resumen con el número de pruebas exitosas y fallidas.
 ### Error: "Base de datos no conectada"
 - Verifica que MySQL esté corriendo
 - Verifica las credenciales en `db.js`
-- Verifica que la base de datos `academia_v2` exista
+- Verifica que la base de datos `academia_final` exista
 
 ### Error: "JWT_SECRET no configurado"
 - Crea un archivo `.env` en el directorio `backend`

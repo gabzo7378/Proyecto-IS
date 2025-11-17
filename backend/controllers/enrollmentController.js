@@ -27,6 +27,51 @@ exports.getAll = async (req, res) => {
   }
 };
 
+// Listar alumnos matriculados por oferta (course_offering o package_offering)
+// Query: type=course|package, id=<offering_id>, status=aceptado|pendiente|...
+exports.getByOffering = async (req, res) => {
+  try {
+    const { type, id, status = 'aceptado' } = req.query;
+    if (!type || !id) {
+      return res.status(400).json({ message: 'Faltan parámetros: type e id' });
+    }
+
+    let where = 'e.enrollment_type = ? AND e.status = ?';
+    const params = [type === 'course' ? 'course' : 'package', status];
+
+    if (type === 'course') {
+      where += ' AND e.course_offering_id = ?';
+    } else {
+      where += ' AND e.package_offering_id = ?';
+    }
+    params.push(id);
+
+    const [rows] = await db.query(
+      `SELECT 
+          MIN(e.id) as enrollment_id,
+          e.enrollment_type,
+          MIN(e.status) as status,
+          s.id as student_id, s.first_name, s.last_name, s.dni,
+          COALESCE(c.name, p.name) as item_name
+       FROM enrollments e
+       JOIN students s ON s.id = e.student_id
+       LEFT JOIN course_offerings co ON e.course_offering_id = co.id
+       LEFT JOIN courses c ON co.course_id = c.id
+       LEFT JOIN package_offerings po ON e.package_offering_id = po.id
+       LEFT JOIN packages p ON po.package_id = p.id
+       WHERE ${where}
+       GROUP BY e.enrollment_type, s.id, s.first_name, s.last_name, s.dni, item_name
+       ORDER BY s.last_name, s.first_name`,
+      params
+    );
+
+    res.json(rows);
+  } catch (err) {
+    console.error('Error al obtener matriculados por oferta:', err);
+    res.status(500).json({ message: 'Error al obtener matriculados por oferta' });
+  }
+};
+
 // Crear matrículas para el estudiante autenticado a partir de una lista de items
 // body: { items: [{ type: 'course'|'package', id: <offering_id> }] }
 exports.create = async (req, res) => {
@@ -43,6 +88,18 @@ exports.create = async (req, res) => {
     res.status(201).json({ message: 'Matrículas creadas correctamente', created });
   } catch (err) {
     console.error('Error al crear matrículas:', err);
+    // Conflictos de reglas de negocio -> 400
+    const knownMsgs = [
+      'El estudiante ya está matriculado en este curso',
+      'El estudiante ya está matriculado en este paquete',
+      'Ya existe una matrícula de paquete que cubre este curso',
+      'El estudiante ya está matriculado en cursos que pertenecen a este paquete',
+      'Course offering no encontrado',
+      'Package offering no encontrado'
+    ];
+    if (err && err.message && knownMsgs.includes(err.message)) {
+      return res.status(400).json({ message: err.message });
+    }
     res.status(500).json({ message: 'Error al crear la matrícula' });
   }
 };
@@ -83,6 +140,27 @@ exports.updateStatus = async (req, res) => {
 
     const adminId = req.user.id;
     const accepted_at = status === 'aceptado' ? new Date() : null;
+
+    // Regla: Solo aceptar si el pago está 100% aprobado (todas las cuotas pagadas)
+    if (status === 'aceptado') {
+      const [ppRows] = await db.query(
+        'SELECT pp.id FROM payment_plans pp WHERE pp.enrollment_id = ? LIMIT 1',
+        [enrollment_id]
+      );
+      if (ppRows.length) {
+        const paymentPlanId = ppRows[0].id;
+        const [pending] = await db.query(
+          'SELECT COUNT(*) as cnt FROM installments WHERE payment_plan_id = ? AND status != ?',
+          [paymentPlanId, 'paid']
+        );
+        if (pending[0].cnt > 0) {
+          return res.status(400).json({ message: 'No se puede aceptar: pago no aprobado completamente' });
+        }
+      } else {
+        // Si no hay plan de pagos, no permitir aceptación automática
+        return res.status(400).json({ message: 'No se puede aceptar: matrícula sin plan de pago' });
+      }
+    }
 
     await db.query(
       'UPDATE enrollments SET status = ?, accepted_by_admin_id = ?, accepted_at = ? WHERE id = ?',

@@ -25,9 +25,9 @@ import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  Schedule as ScheduleIcon,
 } from '@mui/icons-material';
-import { coursesAPI, cyclesAPI, teachersAPI, schedulesAPI } from '../../services/api';
+import { MenuItem } from '@mui/material';
+import { coursesAPI, cyclesAPI, teachersAPI } from '../../services/api';
 
 const AdminCoursesComplete = () => {
   const [courses, setCourses] = useState([]);
@@ -38,9 +38,10 @@ const AdminCoursesComplete = () => {
   const [tabValue, setTabValue] = useState(0);
   const [openCourseDialog, setOpenCourseDialog] = useState(false);
   const [openOfferingDialog, setOpenOfferingDialog] = useState(false);
-  const [openScheduleDialog, setOpenScheduleDialog] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [selectedOffering, setSelectedOffering] = useState(null);
+  const [openEditOfferingDialog, setOpenEditOfferingDialog] = useState(false);
+  const [editOfferingForm, setEditOfferingForm] = useState({ cycle_id: '', group_label: '', teacher_id: '', capacity: '' });
   const [courseForm, setCourseForm] = useState({
     name: '',
     description: '',
@@ -51,16 +52,9 @@ const AdminCoursesComplete = () => {
     cycle_id: '',
     group_label: '',
     teacher_id: '',
-    price_override: '',
     capacity: '',
   });
-  const [scheduleForm, setScheduleForm] = useState({
-    course_offering_id: '',
-    day_of_week: 'Lunes',
-    start_time: '',
-    end_time: '',
-    classroom: '',
-  });
+  // schedule management moved to AdminSchedules
 
   useEffect(() => {
     loadData();
@@ -114,10 +108,11 @@ const AdminCoursesComplete = () => {
   const handleCreateOffering = async () => {
     try {
       await coursesAPI.createOffering({
-        ...offeringForm,
-        price_override: offeringForm.price_override || null,
-        capacity: offeringForm.capacity || null,
+        course_id: offeringForm.course_id,
+        cycle_id: offeringForm.cycle_id,
+        group_label: offeringForm.group_label || null,
         teacher_id: offeringForm.teacher_id || null,
+        capacity: offeringForm.capacity || null,
       });
       setOpenOfferingDialog(false);
       setOfferingForm({
@@ -125,7 +120,6 @@ const AdminCoursesComplete = () => {
         cycle_id: '',
         group_label: '',
         teacher_id: '',
-        price_override: '',
         capacity: '',
       });
       await loadData();
@@ -134,20 +128,33 @@ const AdminCoursesComplete = () => {
     }
   };
 
-  const handleCreateSchedule = async () => {
+  // schedule creation removed from this page
+
+  const openEditOffering = (offering) => {
+    setSelectedOffering(offering);
+    setEditOfferingForm({
+      cycle_id: offering.cycle_id || '',
+      group_label: offering.group_label || '',
+      teacher_id: offering.teacher_id || '',
+      capacity: offering.capacity || '',
+    });
+    setOpenEditOfferingDialog(true);
+  };
+
+  const handleUpdateOffering = async () => {
     try {
-      await schedulesAPI.create(scheduleForm);
-      setOpenScheduleDialog(false);
-      setScheduleForm({
-        course_offering_id: '',
-        day_of_week: 'Lunes',
-        start_time: '',
-        end_time: '',
-        classroom: '',
+      if (!selectedOffering) return;
+      await coursesAPI.updateOffering(selectedOffering.id, {
+        cycle_id: editOfferingForm.cycle_id || null,
+        group_label: editOfferingForm.group_label || null,
+        teacher_id: editOfferingForm.teacher_id || null,
+        capacity: editOfferingForm.capacity || null,
       });
+      setOpenEditOfferingDialog(false);
+      setSelectedOffering(null);
       await loadData();
     } catch (err) {
-      alert(err.message || 'Error al crear horario');
+      alert(err.message || 'Error al actualizar oferta');
     }
   };
 
@@ -264,22 +271,13 @@ const AdminCoursesComplete = () => {
                         : '-'}
                     </TableCell>
                     <TableCell>
-                      S/. {parseFloat(offering.price_override || offering.base_price || 0).toFixed(2)}
+                      S/. {parseFloat(offering.base_price || 0).toFixed(2)}
                     </TableCell>
                     <TableCell>{offering.capacity || '-'}</TableCell>
                     <TableCell>
-                      <IconButton
-                        size="small"
-                        onClick={() => {
-                          setSelectedOffering(offering);
-                          setScheduleForm({
-                            ...scheduleForm,
-                            course_offering_id: offering.id,
-                          });
-                          setOpenScheduleDialog(true);
-                        }}
-                      >
-                        <ScheduleIcon />
+                      {/* Horarios se gestionan en la pestaña de Horarios */}
+                      <IconButton size="small" onClick={() => openEditOffering(offering)} title="Editar oferta">
+                        <EditIcon />
                       </IconButton>
                       <IconButton
                         size="small"
@@ -384,13 +382,7 @@ const AdminCoursesComplete = () => {
                 </MenuItem>
               ))}
             </TextField>
-            <TextField
-              label="Precio (opcional, sobreescribe precio base)"
-              type="number"
-              fullWidth
-              value={offeringForm.price_override}
-              onChange={(e) => setOfferingForm({ ...offeringForm, price_override: e.target.value })}
-            />
+            {/* Sin precio de oferta: se usa el precio base del curso */}
             <TextField
               label="Capacidad"
               type="number"
@@ -408,55 +400,34 @@ const AdminCoursesComplete = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Dialog Crear Horario */}
-      <Dialog open={openScheduleDialog} onClose={() => setOpenScheduleDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Nuevo Horario</DialogTitle>
+      {/* Horarios: gestione en Admin > Horarios */}
+
+      {/* Dialogo: Editar oferta de curso */}
+      <Dialog open={openEditOfferingDialog} onClose={() => setOpenEditOfferingDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Editar oferta de curso</DialogTitle>
         <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
-            <TextField
-              label="Día de la Semana"
-              select
-              fullWidth
-              value={scheduleForm.day_of_week}
-              onChange={(e) => setScheduleForm({ ...scheduleForm, day_of_week: e.target.value })}
-            >
-              <MenuItem value="Lunes">Lunes</MenuItem>
-              <MenuItem value="Martes">Martes</MenuItem>
-              <MenuItem value="Miércoles">Miércoles</MenuItem>
-              <MenuItem value="Jueves">Jueves</MenuItem>
-              <MenuItem value="Viernes">Viernes</MenuItem>
-              <MenuItem value="Sábado">Sábado</MenuItem>
-              <MenuItem value="Domingo">Domingo</MenuItem>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+            <TextField select label="Ciclo" value={editOfferingForm.cycle_id}
+              onChange={(e) => setEditOfferingForm({ ...editOfferingForm, cycle_id: e.target.value })} fullWidth>
+              {cycles.map(c => (
+                <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>
+              ))}
             </TextField>
-            <TextField
-              label="Hora Inicio"
-              type="time"
-              fullWidth
-              InputLabelProps={{ shrink: true }}
-              value={scheduleForm.start_time}
-              onChange={(e) => setScheduleForm({ ...scheduleForm, start_time: e.target.value })}
-            />
-            <TextField
-              label="Hora Fin"
-              type="time"
-              fullWidth
-              InputLabelProps={{ shrink: true }}
-              value={scheduleForm.end_time}
-              onChange={(e) => setScheduleForm({ ...scheduleForm, end_time: e.target.value })}
-            />
-            <TextField
-              label="Aula"
-              fullWidth
-              value={scheduleForm.classroom}
-              onChange={(e) => setScheduleForm({ ...scheduleForm, classroom: e.target.value })}
-            />
+            <TextField label="Grupo" value={editOfferingForm.group_label}
+              onChange={(e) => setEditOfferingForm({ ...editOfferingForm, group_label: e.target.value })} fullWidth />
+            <TextField select label="Docente" value={editOfferingForm.teacher_id}
+              onChange={(e) => setEditOfferingForm({ ...editOfferingForm, teacher_id: e.target.value })} fullWidth>
+              {teachers.map(t => (
+                <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>
+              ))}
+            </TextField>
+            <TextField label="Capacidad" type="number" value={editOfferingForm.capacity}
+              onChange={(e) => setEditOfferingForm({ ...editOfferingForm, capacity: e.target.value })} fullWidth />
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenScheduleDialog(false)}>Cancelar</Button>
-          <Button onClick={handleCreateSchedule} variant="contained">
-            Crear
-          </Button>
+          <Button onClick={() => setOpenEditOfferingDialog(false)}>Cancelar</Button>
+          <Button variant="contained" onClick={handleUpdateOffering}>Guardar</Button>
         </DialogActions>
       </Dialog>
     </Box>

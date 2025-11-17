@@ -5,7 +5,7 @@
 El dashboard admin estaba fallando con el siguiente error:
 
 ```
-Expression #16 of SELECT list is not in GROUP BY clause and contains nonaggregated column 'academia_v2.a.attendance_pct' which is not functionally dependent on columns in GROUP BY clause; this is incompatible with sql_mode=only_full_group_by
+Expression #16 of SELECT list is not in GROUP BY clause and contains nonaggregated column 'academia_final.a.attendance_pct' which is not functionally dependent on columns in GROUP BY clause; this is incompatible with sql_mode=only_full_group_by
 ```
 
 ## Causa del Problema
@@ -67,14 +67,14 @@ npm run fix:dashboard
 ### Opción 2: Usar el Script SQL Directamente
 
 ```bash
-mysql -u root -p academia_v2 < tests/crear-vista-corregida.sql
+mysql -u root -p academia_final < tests/crear-vista-corregida.sql
 ```
 
 ### Opción 3: Ejecutar Manualmente en MySQL
 
 1. Conectarse a MySQL:
 ```bash
-mysql -u root -p academia_v2
+mysql -u root -p academia_final
 ```
 
 2. Ejecutar el contenido de `tests/crear-vista-corregida.sql`

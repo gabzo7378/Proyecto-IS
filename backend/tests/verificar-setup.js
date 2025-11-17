@@ -57,14 +57,14 @@ async function verificarSetup() {
       host: process.env.DB_HOST || 'localhost',
       user: process.env.DB_USER || 'root',
       password: process.env.DB_PASSWORD || 'TochielVroXd12',
-      database: process.env.DB_NAME || 'academia_v2'
+      database: process.env.DB_NAME || 'academia_final'
     });
 
     await connection.execute('SELECT 1');
     log('Conexión a la base de datos exitosa', 'success');
     
     // Verificar que la base de datos exista (ya estamos conectados, así que existe)
-    log('Base de datos academia_v2 existe', 'success');
+    log('Base de datos academia_final existe', 'success');
 
     // Verificar tablas principales
     log('\nVerificando tablas principales...', 'info');

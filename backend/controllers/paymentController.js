@@ -19,8 +19,46 @@ exports.approveInstallment = async (req, res) => {
 
     // Si todas las cuotas están pagadas, actualizar enrollment a 'aceptado'
     const [pending] = await db.query('SELECT COUNT(*) as cnt FROM installments WHERE payment_plan_id = ? AND status != ?', [payment_plan_id, 'paid']);
+    let cycle_start_date = null;
+    let cycle_end_date = null;
     if (pending[0].cnt === 0) {
+      // Aceptar la matrícula principal
       await db.query('UPDATE enrollments SET status = ?, accepted_at = NOW() WHERE id = ?', ['aceptado', enrollment_id]);
+
+      // Obtener datos de la matrícula para cascada
+      const [enrRows] = await db.query('SELECT enrollment_type, student_id, course_offering_id, package_offering_id FROM enrollments WHERE id = ? LIMIT 1', [enrollment_id]);
+      if (enrRows.length) {
+        const enr = enrRows[0];
+        // Fechas del ciclo según tipo de matrícula
+        if (enr.enrollment_type === 'course' && enr.course_offering_id) {
+          const [cy] = await db.query(
+            `SELECT cyc.start_date, cyc.end_date
+             FROM course_offerings co
+             JOIN cycles cyc ON cyc.id = co.cycle_id
+             WHERE co.id = ? LIMIT 1`,
+            [enr.course_offering_id]
+          );
+          if (cy.length) { cycle_start_date = cy[0].start_date; cycle_end_date = cy[0].end_date; }
+        } else if (enr.enrollment_type === 'package' && enr.package_offering_id) {
+          const [cy] = await db.query(
+            `SELECT cyc.start_date, cyc.end_date
+             FROM package_offerings po
+             JOIN cycles cyc ON cyc.id = po.cycle_id
+             WHERE po.id = ? LIMIT 1`,
+            [enr.package_offering_id]
+          );
+          if (cy.length) { cycle_start_date = cy[0].start_date; cycle_end_date = cy[0].end_date; }
+        }
+        // Si es paquete, aceptar también las matrículas de cursos asociadas al mismo package_offering
+        if (enr.enrollment_type === 'package' && enr.package_offering_id) {
+          await db.query(
+            `UPDATE enrollments 
+             SET status = 'aceptado', accepted_at = NOW()
+             WHERE student_id = ? AND enrollment_type = 'course' AND package_offering_id = ?`,
+            [enr.student_id, enr.package_offering_id]
+          );
+        }
+      }
     }
 
     // notificar padre (intentar)
@@ -40,7 +78,7 @@ exports.approveInstallment = async (req, res) => {
       }
     }
 
-    res.json({ message: 'Installment aprobado' });
+    res.json({ message: 'Installment aprobado', cycle_start_date, cycle_end_date });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Error al aprobar installment' });
@@ -63,7 +101,8 @@ exports.uploadVoucher = async (req, res) => {
 
     const voucherUrl = `/uploads/${file.filename}`;
 
-    await db.query('UPDATE installments SET voucher_url = ?, status = ? WHERE id = ?', [voucherUrl, 'pending', installment_id]);
+    // Al subir un nuevo voucher, limpiar cualquier motivo de rechazo previo
+    await db.query('UPDATE installments SET voucher_url = ?, status = ?, rejection_reason = NULL WHERE id = ?', [voucherUrl, 'pending', installment_id]);
 
     res.json({ message: 'Voucher subido con éxito', voucherUrl });
   } catch (err) {
@@ -76,8 +115,12 @@ exports.uploadVoucher = async (req, res) => {
 exports.getAll = async (req, res) => {
   try {
     const status = req.query.status; // pending, paid, overdue
+    // Auto-marcar como vencidas las cuotas pendientes con due_date pasado
+    try {
+      await db.query("UPDATE installments SET status = 'overdue' WHERE status = 'pending' AND due_date < CURDATE()");
+    } catch (e) { console.error('Auto-overdue update failed', e); }
     let sql = `SELECT i.*, pp.enrollment_id, e.student_id, s.first_name, s.last_name, s.dni,
-      COALESCE(c.name, p.name) as item_name, e.enrollment_type
+      COALESCE(c.name, p.name) as item_name, e.enrollment_type, e.status AS enrollment_status
       FROM installments i
       JOIN payment_plans pp ON i.payment_plan_id = pp.id
       JOIN enrollments e ON pp.enrollment_id = e.id
@@ -89,15 +132,48 @@ exports.getAll = async (req, res) => {
 
     const params = [];
     if (status) {
-      sql += ' WHERE i.status = ?';
-      params.push(status);
+      if (status === 'rejected') {
+        sql += " WHERE e.status = 'rechazado'";
+      } else {
+        sql += ' WHERE i.status = ?';
+        params.push(status);
+      }
     }
     sql += ' ORDER BY i.id DESC';
 
     const [rows] = await db.query(sql, params);
-    res.json(rows);
+    // Derivar status_ui
+    const mapped = rows.map(r => ({
+      ...r,
+      status_ui: r.enrollment_status === 'rechazado' ? 'rejected' : r.status,
+    }));
+    res.json(mapped);
   } catch (err) {
     console.error('Error al obtener installments:', err);
     res.status(500).json({ message: 'Error al obtener pagos' });
+  }
+};
+
+// Rechazar un installment: marcar enrollment como rechazado y la cuota como vencida si corresponde
+exports.rejectInstallment = async (req, res) => {
+  try {
+    const { installment_id, reason } = req.body;
+    const [rows] = await db.query(
+      `SELECT i.*, pp.id as payment_plan_id, pp.enrollment_id, i.due_date 
+       FROM installments i JOIN payment_plans pp ON i.payment_plan_id = pp.id 
+       WHERE i.id = ?`,
+      [installment_id]
+    );
+    if (!rows.length) return res.status(404).json({ message: 'Installment no encontrado' });
+    const inst = rows[0];
+    // marcar cuota como overdue si ya pasó la fecha, o dejar pending sin voucher
+    const mark = (inst.due_date && new Date(inst.due_date) < new Date()) ? 'overdue' : 'pending';
+    await db.query('UPDATE installments SET status = ?, voucher_url = NULL, rejection_reason = ? WHERE id = ?', [mark, reason || null, installment_id]);
+    // marcar matrícula como rechazada
+    await db.query('UPDATE enrollments SET status = ? WHERE id = ?', ['rechazado', inst.enrollment_id]);
+    return res.json({ message: 'Pago rechazado y matrícula actualizada' });
+  } catch (err) {
+    console.error('Error al rechazar pago:', err);
+    res.status(500).json({ message: 'Error al rechazar pago' });
   }
 };

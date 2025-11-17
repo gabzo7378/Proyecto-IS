@@ -43,6 +43,55 @@ exports.getByCourseOffering = async (req, res) => {
   }
 };
 
+// Obtener horarios por package_offering
+// 1) Usa mapeo exacto package_offering_courses -> course_offerings
+// 2) Fallback: por cursos del paquete en el mismo ciclo
+exports.getByPackageOffering = async (req, res) => {
+  try {
+    const packageOfferingId = req.params.packageOfferingId;
+    // Intentar mapeo exacto
+    const [mapped] = await db.query(
+      `SELECT s.*, co.id AS course_offering_id, co.course_id, co.group_label,
+              c.name AS course_name, cyc.name AS cycle_name,
+              t.first_name AS teacher_first_name, t.last_name AS teacher_last_name
+       FROM package_offering_courses poc
+       JOIN course_offerings co ON co.id = poc.course_offering_id
+       JOIN courses c ON c.id = co.course_id
+       LEFT JOIN teachers t ON t.id = co.teacher_id
+       JOIN cycles cyc ON cyc.id = co.cycle_id
+       LEFT JOIN schedules s ON s.course_offering_id = co.id
+       WHERE poc.package_offering_id = ?
+       ORDER BY c.id, co.id, s.day_of_week, s.start_time`,
+      [packageOfferingId]
+    );
+    if (mapped && mapped.length > 0) {
+      return res.json(mapped);
+    }
+
+    // Fallback: por cursos/ciclo
+    const [rows] = await db.query(
+      `SELECT s.*, co.id as course_offering_id, co.course_id, co.group_label,
+              c.name as course_name, cyc.name as cycle_name,
+              t.first_name AS teacher_first_name, t.last_name AS teacher_last_name
+       FROM package_offerings po
+       JOIN packages p ON po.package_id = p.id
+       JOIN package_courses pc ON pc.package_id = p.id
+       JOIN course_offerings co ON co.course_id = pc.course_id AND co.cycle_id = po.cycle_id
+       JOIN courses c ON c.id = co.course_id
+       LEFT JOIN teachers t ON t.id = co.teacher_id
+       JOIN cycles cyc ON cyc.id = co.cycle_id
+       LEFT JOIN schedules s ON s.course_offering_id = co.id
+       WHERE po.id = ?
+       ORDER BY c.id, co.id, s.day_of_week, s.start_time`,
+      [packageOfferingId]
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Error al obtener los horarios del paquete' });
+  }
+};
+
 exports.update = async (req, res) => {
   try {
     const id = req.params.id;

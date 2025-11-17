@@ -16,6 +16,9 @@ router.post('/', restrictTo('admin'), teacherController.create);
 router.put('/:id', restrictTo('admin'), teacherController.update);
 router.delete('/:id', restrictTo('admin'), teacherController.delete);
 
+// Resetear contraseña del docente a su DNI
+router.post('/:id/reset-password', restrictTo('admin'), teacherController.resetPassword);
+
 // Rutas específicas para profesores
 router.get('/:id/students', restrictTo('admin', 'teacher'), teacherController.getStudents);
 router.post('/:id/attendance', restrictTo('teacher'), teacherController.markAttendance);

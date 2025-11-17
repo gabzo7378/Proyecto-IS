@@ -35,7 +35,7 @@ const AdminSchedules = () => {
   const [editingSchedule, setEditingSchedule] = useState(null);
   const [formData, setFormData] = useState({
     course_offering_id: '',
-    day_of_week: '',
+    day_of_week: [], // allow multiple when creating
     start_time: '',
     end_time: '',
     classroom: ''
@@ -99,7 +99,7 @@ const AdminSchedules = () => {
       setEditingSchedule(schedule);
       setFormData({
         course_offering_id: schedule.course_offering_id,
-        day_of_week: schedule.day_of_week,
+        day_of_week: schedule.day_of_week, // single value in edit
         start_time: schedule.start_time,
         end_time: schedule.end_time,
         classroom: schedule.classroom
@@ -108,7 +108,7 @@ const AdminSchedules = () => {
       setEditingSchedule(null);
       setFormData({
         course_offering_id: '',
-        day_of_week: '',
+        day_of_week: [],
         start_time: '',
         end_time: '',
         classroom: ''
@@ -121,8 +121,8 @@ const AdminSchedules = () => {
     setOpenDialog(false);
     setEditingSchedule(null);
     setFormData({
-      course_id: '',
-      day_of_week: '',
+      course_offering_id: '',
+      day_of_week: [],
       start_time: '',
       end_time: '',
       classroom: ''
@@ -133,23 +133,47 @@ const AdminSchedules = () => {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      const url = editingSchedule 
-        ? `http://localhost:4000/api/schedules/${editingSchedule.id}`
-        : 'http://localhost:4000/api/schedules';
-      
-      const res = await fetch(url, {
-        method: editingSchedule ? 'PUT' : 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(formData)
-      });
+      if (editingSchedule) {
+        const res = await fetch(`http://localhost:4000/api/schedules/${editingSchedule.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            course_offering_id: formData.course_offering_id,
+            day_of_week: formData.day_of_week, // single value in edit
+            start_time: formData.start_time,
+            end_time: formData.end_time,
+            classroom: formData.classroom
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Error en la operación');
+      } else {
+        // create one schedule per selected day
+        const days = Array.isArray(formData.day_of_week) ? formData.day_of_week : [formData.day_of_week];
+        for (const day of days) {
+          const res = await fetch('http://localhost:4000/api/schedules', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              course_offering_id: formData.course_offering_id,
+              day_of_week: day,
+              start_time: formData.start_time,
+              end_time: formData.end_time,
+              classroom: formData.classroom
+            })
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.message || 'Error en la operación');
+        }
+      }
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Error en la operación');
-
-      fetchSchedules();
+      await fetchSchedules();
       handleClose();
     } catch (err) {
       console.error(err);
@@ -264,11 +288,13 @@ const AdminSchedules = () => {
             </FormControl>
 
             <FormControl fullWidth sx={{ mb: 2 }}>
-              <InputLabel>Día</InputLabel>
+              <InputLabel>{editingSchedule ? 'Día' : 'Días'}</InputLabel>
               <Select
+                multiple={!editingSchedule}
                 value={formData.day_of_week}
-                label="Día"
+                label={editingSchedule ? 'Día' : 'Días'}
                 onChange={(e) => setFormData({ ...formData, day_of_week: e.target.value })}
+                renderValue={(selected) => Array.isArray(selected) ? selected.join(', ') : selected}
               >
                 {DAYS.map((day) => (
                   <MenuItem key={day} value={day}>

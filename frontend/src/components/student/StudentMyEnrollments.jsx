@@ -184,13 +184,25 @@ const StudentMyEnrollments = () => {
                               </TableCell>
                               <TableCell>
                                 <Chip
-                                  label={installment.status === 'paid' ? 'Pagado' : 'Pendiente'}
-                                  color={installment.status === 'paid' ? 'success' : 'warning'}
+                                  label={
+                                    installment.status === 'paid'
+                                      ? 'Pagado'
+                                      : installment.status === 'overdue'
+                                      ? 'Vencido'
+                                      : 'Pendiente'
+                                  }
+                                  color={
+                                    installment.status === 'paid'
+                                      ? 'success'
+                                      : installment.status === 'overdue'
+                                      ? 'error'
+                                      : 'warning'
+                                  }
                                   size="small"
                                 />
                               </TableCell>
                               <TableCell>
-                                {installment.status === 'pending' && !installment.voucher_url && (
+                                {(installment.status === 'pending' || installment.status === 'overdue') && !installment.voucher_url && (
                                   <Button
                                     size="small"
                                     startIcon={<UploadIcon />}
@@ -210,6 +222,11 @@ const StudentMyEnrollments = () => {
                                   >
                                     Ver Voucher
                                   </Button>
+                                )}
+                                {installment.rejection_reason && (
+                                  <Alert severity="error" sx={{ mt: 1 }}>
+                                    Rechazado: {installment.rejection_reason}
+                                  </Alert>
                                 )}
                               </TableCell>
                             </TableRow>

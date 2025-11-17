@@ -192,7 +192,7 @@ Este script creará automáticamente todos los usuarios de prueba en la base de 
 
 3. **Usuarios Duplicados:** Si ejecutas el script múltiples veces, los usuarios duplicados se ignorarán (no se crearán nuevamente).
 
-4. **Base de Datos:** Asegúrate de que la base de datos `academia_v2` esté creada y configurada correctamente antes de ejecutar el script.
+4. **Base de Datos:** Asegúrate de que la base de datos `academia_final` esté creada y configurada correctamente antes de ejecutar el script.
 
 5. **Backend en Ejecución:** El backend debe estar corriendo en `http://localhost:4000` para que el frontend funcione correctamente.
 
@@ -207,7 +207,7 @@ Este script creará automáticamente todos los usuarios de prueba en la base de 
 ### Error: "No se puede conectar a la base de datos"
 - Verifica que MySQL esté corriendo.
 - Verifica las credenciales en el archivo `.env`.
-- Asegúrate de que la base de datos `academia_v2` exista.
+- Asegúrate de que la base de datos `academia_final` exista.
 
 ### Error: "Usuario no encontrado" al iniciar sesión
 - Verifica que el script se ejecutó correctamente.

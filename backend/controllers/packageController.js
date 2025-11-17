@@ -119,7 +119,17 @@ exports.createOffering = async (req, res) => {
 
 exports.getOfferings = async (req, res) => {
   try {
-    const [rows] = await db.query('SELECT po.*, pkg.name as package_name, cyc.name as cycle_name FROM package_offerings po JOIN packages pkg ON po.package_id = pkg.id LEFT JOIN cycles cyc ON po.cycle_id = cyc.id ORDER BY po.id DESC');
+    const [rows] = await db.query(`
+      SELECT 
+        po.*, 
+        pkg.name AS package_name, 
+        pkg.base_price AS base_price,
+        cyc.name AS cycle_name
+      FROM package_offerings po 
+      JOIN packages pkg ON po.package_id = pkg.id 
+      LEFT JOIN cycles cyc ON po.cycle_id = cyc.id 
+      ORDER BY po.id DESC
+    `);
     res.json(rows);
   } catch (err) {
     console.error(err);
@@ -144,5 +154,59 @@ exports.deleteOffering = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Error eliminando package offering' });
+  }
+};
+
+// Mapear course_offerings a una package_offering
+exports.getOfferingCourses = async (req, res) => {
+  try {
+    const packageOfferingId = req.params.id;
+    const [rows] = await db.query(
+      `SELECT poc.course_offering_id
+       FROM package_offering_courses poc
+       WHERE poc.package_offering_id = ?`,
+      [packageOfferingId]
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error('Error listando cursos de la package_offering:', err);
+    res.status(500).json({ message: 'Error al obtener cursos ofrecidos del paquete' });
+  }
+};
+
+exports.addOfferingCourse = async (req, res) => {
+  try {
+    const packageOfferingId = req.params.id;
+    const { course_offering_id } = req.body;
+    if (!course_offering_id) return res.status(400).json({ message: 'Falta course_offering_id' });
+
+    await db.query(
+      `INSERT INTO package_offering_courses (package_offering_id, course_offering_id)
+       VALUES (?, ?)`,
+      [packageOfferingId, course_offering_id]
+    );
+    res.status(201).json({ message: 'Curso ofrecido vinculado al paquete' });
+  } catch (err) {
+    console.error('Error agregando curso ofrecido al paquete:', err);
+    if (err && err.code === 'ER_DUP_ENTRY') {
+      return res.status(400).json({ message: 'Este curso ofrecido ya está vinculado' });
+    }
+    res.status(500).json({ message: 'Error al vincular curso ofrecido al paquete' });
+  }
+};
+
+exports.removeOfferingCourse = async (req, res) => {
+  try {
+    const packageOfferingId = req.params.id;
+    const courseOfferingId = req.params.courseOfferingId;
+    await db.query(
+      `DELETE FROM package_offering_courses
+       WHERE package_offering_id = ? AND course_offering_id = ?`,
+      [packageOfferingId, courseOfferingId]
+    );
+    res.json({ message: 'Curso ofrecido desvinculado del paquete' });
+  } catch (err) {
+    console.error('Error removiendo curso ofrecido del paquete:', err);
+    res.status(500).json({ message: 'Error al desvincular curso ofrecido del paquete' });
   }
 };

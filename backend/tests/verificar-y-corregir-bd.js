@@ -27,7 +27,7 @@ async function verificarEstructura() {
       host: process.env.DB_HOST || 'localhost',
       user: process.env.DB_USER || 'root',
       password: process.env.DB_PASSWORD || 'TochielVroXd12',
-      database: process.env.DB_NAME || 'academia_v2'
+      database: process.env.DB_NAME || 'academia_final'
     });
 
     console.log(`${colors.blue}═══════════════════════════════════════════════════════════${colors.reset}`);

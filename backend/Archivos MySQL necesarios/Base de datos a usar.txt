@@ -217,11 +217,5 @@ CREATE INDEX idx_offering_cycle ON course_offerings(cycle_id);
 CREATE INDEX idx_installment_due ON installments(due_date);
 CREATE INDEX idx_attendance_student_date ON attendance(student_id, date);
 
-CREATE TABLE package_offering_courses (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  package_offering_id INT NOT NULL,
-  course_offering_id INT NOT NULL,
-  UNIQUE KEY uq_poc (package_offering_id, course_offering_id),
-  FOREIGN KEY (package_offering_id) REFERENCES package_offerings(id) ON DELETE CASCADE,
-  FOREIGN KEY (course_offering_id) REFERENCES course_offerings(id) ON DELETE CASCADE
-);
+
+ALTER TABLE installments ADD COLUMN rejection_reason VARCHAR(255) NULL AFTER voucher_url;

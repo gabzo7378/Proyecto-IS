@@ -1,7 +1,7 @@
--- Script para crear las tablas faltantes en la base de datos academia_v2
+-- Script para crear las tablas faltantes en la base de datos academia_final
 -- Ejecuta este script en MySQL si faltan algunas tablas
 
-USE academia_v2;
+USE academia_final;
 
 -- ===========================================================
 -- TABLA DE CICLOS (si no existe)

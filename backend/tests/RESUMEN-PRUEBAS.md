@@ -14,10 +14,10 @@ Antes de ejecutar las pruebas, asegúrate de:
 
 ### 1. Base de Datos Inicializada
 
-Ejecuta el script SQL del archivo `Academia_V2.txt` para crear todas las tablas:
+Ejecuta el script SQL del archivo `academia_final.txt` para crear todas las tablas:
 
 ```sql
--- Ejecuta el contenido completo de Academia_V2.txt en MySQL
+-- Ejecuta el contenido completo de academia_final.txt en MySQL
 ```
 
 ### 2. Vista Admin Creada
@@ -55,7 +55,7 @@ JWT_SECRET=tu_secreto_jwt_aqui
 DB_HOST=localhost
 DB_USER=root
 DB_PASSWORD=tu_password
-DB_NAME=academia_v2
+DB_NAME=academia_final
 ```
 
 ### 6. Servidor Corriendo
@@ -158,8 +158,8 @@ Las pruebas verifican el siguiente flujo:
 ## Solución de Problemas
 
 ### Error: "Tablas no existen"
-- Ejecuta el script SQL de `Academia_V2.txt`
-- Verifica que la base de datos `academia_v2` esté creada
+- Ejecuta el script SQL de `academia_final.txt`
+- Verifica que la base de datos `academia_final` esté creada
 
 ### Error: "Vista no existe"
 - Ejecuta el script SQL de `AdminView.txt`

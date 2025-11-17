@@ -137,6 +137,15 @@ export const packagesAPI = {
   deleteOffering: (id) => request(`/packages/offerings/${id}`, {
     method: 'DELETE',
   }),
+  // Mapping: package_offering -> course_offerings
+  addOfferingCourse: (packageOfferingId, courseOfferingId) => request(`/packages/offerings/${packageOfferingId}/courses`, {
+    method: 'POST',
+    body: JSON.stringify({ course_offering_id: courseOfferingId }),
+  }),
+  removeOfferingCourse: (packageOfferingId, courseOfferingId) => request(`/packages/offerings/${packageOfferingId}/courses/${courseOfferingId}`, {
+    method: 'DELETE',
+  }),
+  getOfferingCourses: (packageOfferingId) => request(`/packages/offerings/${packageOfferingId}/courses`),
 };
 
 // API de docentes
@@ -153,6 +162,9 @@ export const teachersAPI = {
   }),
   delete: (id) => request(`/teachers/${id}`, {
     method: 'DELETE',
+  }),
+  resetPassword: (id) => request(`/teachers/${id}/reset-password`, {
+    method: 'POST',
   }),
   getStudents: (id) => request(`/teachers/${id}/students`),
   markAttendance: (teacherId, data) => request(`/teachers/${teacherId}/attendance`, {
@@ -176,6 +188,10 @@ export const enrollmentsAPI = {
     method: 'PUT',
     body: JSON.stringify({ enrollment_id: enrollmentId, status }),
   }),
+  getByOffering: (type, id, status = 'aceptado') => {
+    const params = new URLSearchParams({ type, id, status });
+    return request(`/enrollments/by-offering?${params.toString()}`);
+  },
 };
 
 // API de pagos
@@ -197,12 +213,17 @@ export const paymentsAPI = {
     method: 'POST',
     body: JSON.stringify({ installment_id: installmentId }),
   }),
+  rejectInstallment: (installmentId, reason = null) => request('/payments/reject', {
+    method: 'POST',
+    body: JSON.stringify({ installment_id: installmentId, reason }),
+  }),
 };
 
 // API de horarios
 export const schedulesAPI = {
   getAll: () => request('/schedules'),
   getByCourseOffering: (courseOfferingId) => request(`/schedules/offering/${courseOfferingId}`),
+  getByPackageOffering: (packageOfferingId) => request(`/schedules/package-offering/${packageOfferingId}`),
   create: (data) => request('/schedules', {
     method: 'POST',
     body: JSON.stringify(data),

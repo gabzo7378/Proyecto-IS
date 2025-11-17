@@ -1,6 +1,8 @@
 // controllers/teacherController.js
 const db = require('../db');
 const { sendNotificationToParent } = require('../utils/notifications');
+const User = require('../models/userModel');
+const bcrypt = require('bcrypt');
 
 exports.create = async (req, res) => {
   try {
@@ -9,7 +11,19 @@ exports.create = async (req, res) => {
       'INSERT INTO teachers (first_name, last_name, dni, phone, email, specialization) VALUES (?, ?, ?, ?, ?, ?)',
       [first_name, last_name, dni, phone, email, specialization]
     );
-    res.status(201).json({ id: result.insertId, message: 'Profesor creado correctamente' });
+    const teacherId = result.insertId;
+
+    // Crear usuario para el docente: username=dni, password=dni (por defecto)
+    try {
+      await User.create({ username: dni, password: dni, role: 'teacher', related_id: teacherId });
+    } catch (e) {
+      // Si ya existe el usuario, ignorar duplicado
+      if (e && e.code !== 'ER_DUP_ENTRY') {
+        console.error('Error creando usuario de docente:', e);
+      }
+    }
+
+    res.status(201).json({ id: teacherId, message: 'Profesor creado correctamente' });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Error al crear profesor' });
@@ -61,6 +75,27 @@ exports.delete = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Error al eliminar profesor' });
+  }
+};
+
+// Resetear contraseña del usuario docente a su DNI
+exports.resetPassword = async (req, res) => {
+  try {
+    const teacherId = req.params.id;
+    const [rows] = await db.query('SELECT dni FROM teachers WHERE id = ? LIMIT 1', [teacherId]);
+    if (!rows.length) return res.status(404).json({ message: 'Profesor no encontrado' });
+    const dni = rows[0].dni;
+    const password_hash = await bcrypt.hash(dni, 10);
+    const [upd] = await db.query('UPDATE users SET password_hash = ? WHERE role = ? AND related_id = ?', [password_hash, 'teacher', teacherId]);
+    if (upd.affectedRows === 0) {
+      // Si no existía usuario, crearlo
+      try { await User.create({ username: dni, password: dni, role: 'teacher', related_id: teacherId }); }
+      catch (e) { /* ignorar duplicados */ }
+    }
+    res.json({ message: 'Contraseña restablecida al DNI' });
+  } catch (err) {
+    console.error('Error al resetear contraseña de docente:', err);
+    res.status(500).json({ message: 'Error al resetear contraseña' });
   }
 };
 

@@ -11,10 +11,10 @@ async function createAdmin() {
 
     // Conectar a la base de datos
     const connection = await mysql.createConnection({
-      host: process.env.DB_HOST || 'localhost',
-      user: process.env.DB_USER || 'root',
-      password: process.env.DB_PASSWORD || 'TochielVroXd12',
-      database: process.env.DB_NAME || 'academia_v2'
+      host: process.env.DB_HOST,
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME
     });
 
     // Insertar el administrador

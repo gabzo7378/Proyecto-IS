@@ -13,6 +13,7 @@ router.delete('/:id', restrictTo('admin'), scheduleController.delete);
 
 // Rutas accesibles para todos los usuarios autenticados
 router.get('/offering/:courseOfferingId', scheduleController.getByCourseOffering);
+router.get('/package-offering/:packageOfferingId', scheduleController.getByPackageOffering);
 
 // Obtener todos los horarios (admin)
 router.get('/', restrictTo('admin'), scheduleController.getAll);

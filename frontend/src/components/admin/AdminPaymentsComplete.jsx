@@ -19,13 +19,14 @@ import {
 import {
   CheckCircle as CheckCircleIcon,
   Visibility as VisibilityIcon,
+  Cancel as CancelIcon,
 } from '@mui/icons-material';
 import { paymentsAPI } from '../../services/api';
 
 const AdminPaymentsComplete = () => {
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('pending');
 
   useEffect(() => {
     loadPayments();
@@ -45,11 +46,27 @@ const AdminPaymentsComplete = () => {
     }
   };
 
+  const handleReject = async (installmentId) => {
+    if (!window.confirm('¿Rechazar este pago?')) return;
+    const reason = window.prompt('Ingresa la razón del rechazo (opcional):', 'Voucher ilegible / no coincide el monto / fuera de fecha');
+    try {
+      await paymentsAPI.rejectInstallment(installmentId, reason || null);
+      alert('Pago rechazado');
+      loadPayments();
+    } catch (err) {
+      alert(err.message || 'Error al rechazar pago');
+    }
+  };
+
   const handleApprove = async (installmentId) => {
     if (!window.confirm('¿Aprobar este pago?')) return;
     try {
-      await paymentsAPI.approveInstallment(installmentId);
-      alert('Pago aprobado correctamente');
+      const res = await paymentsAPI.approveInstallment(installmentId);
+      const { cycle_start_date, cycle_end_date } = res || {};
+      const datesMsg = (cycle_start_date && cycle_end_date)
+        ? `\nCiclo: ${new Date(cycle_start_date).toLocaleDateString()} - ${new Date(cycle_end_date).toLocaleDateString()}`
+        : '';
+      alert(`Pago aprobado correctamente.${datesMsg}`);
       loadPayments();
     } catch (err) {
       alert(err.message || 'Error al aprobar pago');
@@ -64,6 +81,8 @@ const AdminPaymentsComplete = () => {
         return 'warning';
       case 'overdue':
         return 'error';
+      case 'rejected':
+        return 'default';
       default:
         return 'default';
     }
@@ -77,6 +96,8 @@ const AdminPaymentsComplete = () => {
         return 'Pendiente';
       case 'overdue':
         return 'Vencido';
+      case 'rejected':
+        return 'Rechazado';
       default:
         return status;
     }
@@ -100,6 +121,7 @@ const AdminPaymentsComplete = () => {
           <MenuItem value="pending">Pendientes</MenuItem>
           <MenuItem value="paid">Pagados</MenuItem>
           <MenuItem value="overdue">Vencidos</MenuItem>
+          <MenuItem value="rejected">Rechazados</MenuItem>
         </TextField>
       </Box>
 
@@ -133,8 +155,8 @@ const AdminPaymentsComplete = () => {
                 </TableCell>
                 <TableCell>
                   <Chip
-                    label={getStatusLabel(payment.status)}
-                    color={getStatusColor(payment.status)}
+                    label={getStatusLabel(payment.status_ui || payment.status)}
+                    color={getStatusColor(payment.status_ui || payment.status)}
                     size="small"
                   />
                 </TableCell>
@@ -155,15 +177,41 @@ const AdminPaymentsComplete = () => {
                   )}
                 </TableCell>
                 <TableCell>
-                  {payment.status === 'pending' && payment.voucher_url && (
-                    <IconButton
-                      size="small"
-                      color="success"
-                      onClick={() => handleApprove(payment.id)}
-                      title="Aprobar pago"
-                    >
-                      <CheckCircleIcon />
-                    </IconButton>
+                  {payment.status === 'pending' && (
+                    <>
+                      {payment.voucher_url && (
+                        <IconButton
+                          size="small"
+                          color="success"
+                          onClick={() => handleApprove(payment.id)}
+                          title="Aprobar pago"
+                        >
+                          <CheckCircleIcon />
+                        </IconButton>
+                      )}
+                      <IconButton
+                        size="small"
+                        color="error"
+                        onClick={() => handleReject(payment.id)}
+                        title="Rechazar pago"
+                        sx={{ ml: 1 }}
+                      >
+                        <CancelIcon />
+                      </IconButton>
+                    </>
+                  )}
+                  {payment.status === 'overdue' && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Chip label="Vencido" color="error" size="small" />
+                      <IconButton
+                        size="small"
+                        color="error"
+                        onClick={() => handleReject(payment.id)}
+                        title="Rechazar pago"
+                      >
+                        <CancelIcon />
+                      </IconButton>
+                    </Box>
                   )}
                 </TableCell>
               </TableRow>

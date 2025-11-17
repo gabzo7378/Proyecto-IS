@@ -12,6 +12,10 @@ router.get('/offerings', packageController.getOfferings);
 router.post('/offerings', verifyToken, restrictTo('admin'), packageController.createOffering);
 router.put('/offerings/:id', verifyToken, restrictTo('admin'), packageController.updateOffering);
 router.delete('/offerings/:id', verifyToken, restrictTo('admin'), packageController.deleteOffering);
+// Mapping: package_offering -> course_offerings
+router.get('/offerings/:id/courses', packageController.getOfferingCourses);
+router.post('/offerings/:id/courses', verifyToken, restrictTo('admin'), packageController.addOfferingCourse);
+router.delete('/offerings/:id/courses/:courseOfferingId', verifyToken, restrictTo('admin'), packageController.removeOfferingCourse);
 
 // Rutas de paquetes individuales
 router.get('/:id', packageController.getOne);

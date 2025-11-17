@@ -29,4 +29,7 @@ router.post('/upload', verifyToken, upload.single('voucher'), paymentController.
 // Aprobar installment (admin)
 router.post('/approve', verifyToken, restrictTo('admin'), paymentController.approveInstallment);
 
+// Rechazar installment (admin)
+router.post('/reject', verifyToken, restrictTo('admin'), paymentController.rejectInstallment);
+
 module.exports = router;

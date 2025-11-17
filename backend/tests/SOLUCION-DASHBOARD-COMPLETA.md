@@ -8,7 +8,7 @@ El dashboard admin estaba fallando debido a un error de compatibilidad con el mo
 
 ### Error Original
 ```
-Expression #16 of SELECT list is not in GROUP BY clause and contains nonaggregated column 'academia_v2.a.attendance_pct' which is not functionally dependent on columns in GROUP BY clause; this is incompatible with sql_mode=only_full_group_by
+Expression #16 of SELECT list is not in GROUP BY clause and contains nonaggregated column 'academia_final.a.attendance_pct' which is not functionally dependent on columns in GROUP BY clause; this is incompatible with sql_mode=only_full_group_by
 ```
 
 ### Causa Raíz

@@ -11,6 +11,7 @@ router.use(verifyToken);
 // Rutas admin
 router.get('/admin', restrictTo('admin'), enrollmentController.getAllAdmin);
 router.put('/status', restrictTo('admin'), enrollmentController.updateStatus);
+router.get('/by-offering', restrictTo('admin'), enrollmentController.getByOffering);
 
 // Obtener matrículas del estudiante autenticado (o usar query.student_id si admin)
 router.get('/', enrollmentController.getAll);

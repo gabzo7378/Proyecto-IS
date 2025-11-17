@@ -4,7 +4,7 @@
 -- El problema: MySQL está en modo ONLY_FULL_GROUP_BY, que requiere
 -- que todos los campos no agregados estén en el GROUP BY
 
-USE academia_v2;
+USE academia_final;
 
 -- Eliminar la vista existente
 DROP VIEW IF EXISTS view_dashboard_admin_extended;
@@ -88,7 +88,7 @@ SELECT
         END, 0
       ), 2
     ) > 0 THEN 'Con deuda pendiente'
-    WHEN MAX(a.attendance_pct) < 75 THEN 'Baja asistencia'
+    WHEN MAX(a.attendance_pct) < 75 AND c.start_date <= CURDATE() THEN 'Baja asistencia'
     ELSE 'En regla'
   END AS alert_status
 

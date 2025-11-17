@@ -1,6 +1,13 @@
 // models/cycleModel.js
 const db = require('../db');
 
+function formatDateForMySQL(value) {
+  if (!value) return null;
+  const d = new Date(value);
+  if (isNaN(d)) return null;
+  return d.toISOString().slice(0, 10);
+}
+
 const Cycle = {
   async create(data) {
     const { name, start_date, end_date, duration_months, status } = data;
@@ -10,8 +17,8 @@ const Cycle = {
     `;
     const [result] = await db.query(sql, [
       name,
-      start_date,
-      end_date,
+      formatDateForMySQL(start_date),
+      formatDateForMySQL(end_date),
       duration_months || null,
       status || 'open'
     ]);
@@ -37,8 +44,8 @@ const Cycle = {
     `;
     await db.query(sql, [
       name,
-      start_date,
-      end_date,
+      formatDateForMySQL(start_date),
+      formatDateForMySQL(end_date),
       duration_months || null,
       status || 'open',
       id
@@ -60,4 +67,3 @@ const Cycle = {
 };
 
 module.exports = Cycle;
-
