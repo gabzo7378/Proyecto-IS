@@ -7,24 +7,33 @@ import {
   Grid,
   Card,
   CardContent,
-  CardActions,
   Button,
   Chip,
   CircularProgress,
+  IconButton,
+  Avatar
 } from '@mui/material';
 import {
   School as SchoolIcon,
   Book as BookIcon,
   Payment as PaymentIcon,
+  ArrowForward as ArrowIcon,
+  TrendingUp as TrendingUpIcon,
+  EventNote as EventIcon,
+  AccessTime as TimeIcon
 } from '@mui/icons-material';
 import { enrollmentsAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
+import './student-dashboard.css';
 
 const StudentDashboardComplete = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [enrollments, setEnrollments] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Fecha actual para el saludo
+  const today = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
   useEffect(() => {
     if (user) {
@@ -46,179 +55,196 @@ const StudentDashboardComplete = () => {
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
+      <Box className="student-loading">
+        <CircularProgress className="student-loading-spinner" />
       </Box>
     );
   }
 
-  // Ocultar matrículas canceladas y cursos que pertenecen a un paquete
+  // Filtros de lógica de negocio
   const visibleEnrollments = enrollments.filter((e) => {
-    if (e.status === 'cancelado') {
-      return false;
-    }
-    if (e.enrollment_type === 'course' && e.package_offering_id) {
-      return false;
-    }
+    if (e.status === 'cancelado') return false;
+    if (e.enrollment_type === 'course' && e.package_offering_id) return false;
     return true;
   });
 
   const stats = {
-    totalEnrollments: visibleEnrollments.length,
-    acceptedEnrollments: visibleEnrollments.filter(e => e.status === 'aceptado').length,
-    pendingEnrollments: visibleEnrollments.filter(e => e.status === 'pendiente').length,
+    total: visibleEnrollments.length,
+    accepted: visibleEnrollments.filter(e => e.status === 'aceptado').length,
+    pending: visibleEnrollments.filter(e => e.status === 'pendiente').length,
   };
 
   return (
-    <Box>
-      <Typography variant="h4" gutterBottom>
-        Dashboard Estudiante
-      </Typography>
-      <Typography variant="body1" color="textSecondary" gutterBottom sx={{ mb: 3 }}>
-        Bienvenido, {user?.name || 'Estudiante'}
-      </Typography>
-
-      {/* Estadísticas */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={4}>
-          <Card>
-            <CardContent>
-              <Box display="flex" alignItems="center">
-                <BookIcon color="primary" sx={{ mr: 2, fontSize: 40 }} />
-                <Box>
-                  <Typography color="textSecondary" gutterBottom>
-                    Total Matrículas
-                  </Typography>
-                  <Typography variant="h4">{stats.totalEnrollments}</Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={4}>
-          <Card>
-            <CardContent>
-              <Box display="flex" alignItems="center">
-                <SchoolIcon color="success" sx={{ mr: 2, fontSize: 40 }} />
-                <Box>
-                  <Typography color="textSecondary" gutterBottom>
-                    Matrículas Aceptadas
-                  </Typography>
-                  <Typography variant="h4">{stats.acceptedEnrollments}</Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={4}>
-          <Card>
-            <CardContent>
-              <Box display="flex" alignItems="center">
-                <PaymentIcon color="warning" sx={{ mr: 2, fontSize: 40 }} />
-                <Box>
-                  <Typography color="textSecondary" gutterBottom>
-                    Matrículas Pendientes
-                  </Typography>
-                  <Typography variant="h4">{stats.pendingEnrollments}</Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-
-      {/* Acciones rápidas */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Cursos Disponibles
-              </Typography>
-              <Typography variant="body2" color="textSecondary" gutterBottom>
-                Explora y matricúlate en los cursos disponibles
-              </Typography>
-            </CardContent>
-            <CardActions>
-              <Button
-                variant="contained"
-                onClick={() => navigate('/student/available-courses')}
-              >
-                Ver Cursos
-              </Button>
-            </CardActions>
-          </Card>
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Mis Matrículas
-              </Typography>
-              <Typography variant="body2" color="textSecondary" gutterBottom>
-                Revisa el estado de tus matrículas y pagos
-              </Typography>
-            </CardContent>
-            <CardActions>
-              <Button
-                variant="contained"
-                onClick={() => navigate('/student/my-enrollments')}
-              >
-                Ver Matrículas
-              </Button>
-            </CardActions>
-          </Card>
-        </Grid>
-      </Grid>
-
-      {/* Matrículas recientes */}
-      {visibleEnrollments.length > 0 && (
+    <Box className="student-content fade-in">
+      
+      {/* 1. BANNER DE BIENVENIDA */}
+      <Box className="student-welcome-card">
         <Box>
-          <Typography variant="h5" gutterBottom>
-            Mis Matrículas Recientes
-          </Typography>
-          <Grid container spacing={2}>
-            {visibleEnrollments
-              .map((enrollment) => (
-                <Grid item xs={12} md={4} key={enrollment.id}>
-                  <Card>
-                    <CardContent>
-                      <Typography variant="h6">{enrollment.item_name || 'Curso/Paquete'}</Typography>
-                      <Chip
-                        label={enrollment.status}
-                        color={enrollment.status === 'aceptado' ? 'success' : 'warning'}
-                        size="small"
-                        sx={{ mt: 1 }}
-                      />
-                      {enrollment.cycle_name && (
-                        <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
-                          Ciclo: {enrollment.cycle_name}
-                        </Typography>
-                      )}
-                      {(enrollment.cycle_start_date || enrollment.cycle_end_date) && (
-                        <Typography variant="body2" color="textSecondary">
-                          {enrollment.cycle_start_date
-                            ? new Date(enrollment.cycle_start_date).toLocaleDateString()
-                            : '-'}{' '}
-                          -{' '}
-                          {enrollment.cycle_end_date
-                            ? new Date(enrollment.cycle_end_date).toLocaleDateString()
-                            : '-'}
-                        </Typography>
-                      )}
-                      <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
-                        S/. {parseFloat(enrollment.item_price || 0).toFixed(2)}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
-          </Grid>
+            <Typography variant="subtitle2" className="welcome-date">
+                {today}
+            </Typography>
+            <Typography variant="h4" className="welcome-title">
+                ¡Hola de nuevo, {user?.first_name || 'Estudiante'}! 👋
+            </Typography>
+            <Typography variant="body1" className="welcome-subtitle">
+                Tienes {stats.pending > 0 ? `${stats.pending} pagos pendientes` : 'todo al día'} en tu actividad académica.
+            </Typography>
         </Box>
-      )}
+        <Box className="welcome-icon-container">
+            <SchoolIcon sx={{ fontSize: 80, opacity: 0.2, color: 'white' }} />
+        </Box>
+      </Box>
+
+      {/* 2. ESTADÍSTICAS (KPIs) */}
+      <Grid container spacing={3} sx={{ mb: 4, mt: -4 }}>
+        <Grid item xs={12} sm={4}>
+          <Card className="student-stat-card primary">
+            <CardContent>
+              <Box display="flex" justifyContent="space-between" alignItems="center">
+                <Box>
+                  <Typography variant="overline" sx={{ opacity: 0.8 }}>Total Cursos</Typography>
+                  <Typography variant="h3" sx={{ fontWeight: 'bold' }}>{stats.total}</Typography>
+                </Box>
+                <Avatar className="stat-icon-bg primary">
+                  <BookIcon />
+                </Avatar>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <Card className="student-stat-card success">
+            <CardContent>
+              <Box display="flex" justifyContent="space-between" alignItems="center">
+                <Box>
+                  <Typography variant="overline" sx={{ opacity: 0.8 }}>Activos</Typography>
+                  <Typography variant="h3" sx={{ fontWeight: 'bold' }}>{stats.accepted}</Typography>
+                </Box>
+                <Avatar className="stat-icon-bg success">
+                  <TrendingUpIcon />
+                </Avatar>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <Card className="student-stat-card warning">
+            <CardContent>
+              <Box display="flex" justifyContent="space-between" alignItems="center">
+                <Box>
+                  <Typography variant="overline" sx={{ opacity: 0.8 }}>Pendientes</Typography>
+                  <Typography variant="h3" sx={{ fontWeight: 'bold' }}>{stats.pending}</Typography>
+                </Box>
+                <Avatar className="stat-icon-bg warning">
+                  <AccessTimeIcon />
+                </Avatar>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      {/* 3. GRID PRINCIPAL: ACCIONES Y LISTA */}
+      <Grid container spacing={4}>
+        
+        {/* COLUMNA IZQUIERDA: ACCIONES */}
+        <Grid item xs={12} md={4}>
+            <Typography variant="h6" className="section-header" gutterBottom>
+                Acciones Rápidas
+            </Typography>
+            
+            <Card className="action-card" onClick={() => navigate('/student/available-courses')}>
+                <CardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Box>
+                        <Typography variant="h6" sx={{ fontWeight: 600 }}>Explorar Cursos</Typography>
+                        <Typography variant="body2" color="text.secondary">Ver catálogo y matricularme</Typography>
+                    </Box>
+                    <IconButton className="action-button">
+                        <ArrowIcon />
+                    </IconButton>
+                </CardContent>
+            </Card>
+
+            <Card className="action-card mt-2" onClick={() => navigate('/student/my-enrollments')}>
+                <CardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Box>
+                        <Typography variant="h6" sx={{ fontWeight: 600 }}>Mis Pagos</Typography>
+                        <Typography variant="body2" color="text.secondary">Subir vouchers y revisar estado</Typography>
+                    </Box>
+                    <IconButton className="action-button">
+                        <PaymentIcon />
+                    </IconButton>
+                </CardContent>
+            </Card>
+        </Grid>
+
+        {/* COLUMNA DERECHA: MATRÍCULAS RECIENTES */}
+        <Grid item xs={12} md={8}>
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                <Typography variant="h6" className="section-header">
+                    Mis Cursos Recientes
+                </Typography>
+                <Button size="small" onClick={() => navigate('/student/my-enrollments')}>
+                    Ver todos
+                </Button>
+            </Box>
+
+            {visibleEnrollments.length > 0 ? (
+                <Grid container spacing={2}>
+                    {visibleEnrollments.slice(0, 3).map((enrollment) => (
+                        <Grid item xs={12} key={enrollment.id}>
+                            <Card className="student-card horizontal-card">
+                                <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2, py: 2, '&:last-child': { pb: 2 } }}>
+                                    <Avatar variant="rounded" sx={{ bgcolor: enrollment.enrollment_type === 'course' ? '#e0f2fe' : '#f3e8ff', color: enrollment.enrollment_type === 'course' ? '#0284c7' : '#9333ea', width: 56, height: 56 }}>
+                                        {enrollment.enrollment_type === 'course' ? <BookIcon /> : <SchoolIcon />}
+                                    </Avatar>
+                                    
+                                    <Box sx={{ flexGrow: 1 }}>
+                                        <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
+                                            {enrollment.item_name}
+                                        </Typography>
+                                        <Typography variant="caption" color="text.secondary" display="flex" alignItems="center" gap={0.5} mt={0.5}>
+                                            <EventIcon sx={{ fontSize: 14 }} /> 
+                                            {enrollment.cycle_name || 'Ciclo General'}
+                                        </Typography>
+                                    </Box>
+
+                                    <Box sx={{ textAlign: 'right', display: { xs: 'none', sm: 'block' } }}>
+                                        <Chip 
+                                            label={enrollment.status} 
+                                            size="small"
+                                            className={`student-badge ${enrollment.status === 'aceptado' ? 'approved' : enrollment.status === 'pendiente' ? 'pending' : 'default'}`}
+                                            sx={{ mb: 0.5 }}
+                                        />
+                                        <Typography variant="subtitle2" className="student-price-small">
+                                            S/. {parseFloat(enrollment.item_price).toFixed(2)}
+                                        </Typography>
+                                    </Box>
+                                </CardContent>
+                            </Card>
+                        </Grid>
+                    ))}
+                </Grid>
+            ) : (
+                <Box className="empty-state-box">
+                    <SchoolIcon sx={{ fontSize: 48, color: '#ccc', mb: 2 }} />
+                    <Typography color="text.secondary">Aún no te has matriculado en ningún curso.</Typography>
+                    <Button variant="outlined" sx={{ mt: 2 }} onClick={() => navigate('/student/available-courses')}>
+                        Empezar ahora
+                    </Button>
+                </Box>
+            )}
+        </Grid>
+      </Grid>
     </Box>
   );
 };
 
-export default StudentDashboardComplete;
+// Icono auxiliar que faltaba en imports
+const AccessTimeIcon = () => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"></path>
+    </svg>
+);
 
+export default StudentDashboardComplete;

@@ -6,7 +6,7 @@ const API_BASE_URL = 'http://localhost:4000/api';
 // Función helper para hacer peticiones
 async function request(endpoint, options = {}) {
   const token = localStorage.getItem('token');
-  
+
   const config = {
     ...options,
     headers: {
@@ -24,11 +24,11 @@ async function request(endpoint, options = {}) {
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
     const data = await response.json();
-    
+
     if (!response.ok) {
       throw new Error(data.message || 'Error en la petición');
     }
-    
+
     return data;
   } catch (error) {
     console.error('API Error:', error);
@@ -90,6 +90,7 @@ export const coursesAPI = {
   delete: (id) => request(`/courses/${id}`, {
     method: 'DELETE',
   }),
+  getOfferings: () => request('/courses/offerings'),
   createOffering: (data) => request('/courses/offerings', {
     method: 'POST',
     body: JSON.stringify(data),

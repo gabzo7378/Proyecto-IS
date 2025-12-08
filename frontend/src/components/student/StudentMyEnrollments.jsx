@@ -26,6 +26,7 @@ import {
 import { Upload as UploadIcon } from '@mui/icons-material';
 import { enrollmentsAPI, paymentsAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
+import './student-dashboard.css';
 
 const StudentMyEnrollments = () => {
   const { user } = useAuth();
@@ -106,26 +107,26 @@ const StudentMyEnrollments = () => {
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
+      <Box className="student-loading">
+        <CircularProgress className="student-loading-spinner" />
       </Box>
     );
   }
 
   return (
-    <Box>
-      <Typography variant="h4" gutterBottom>
+    <Box className="student-content">
+      <Typography variant="h4" gutterBottom className="student-page-title">
         Mis Matrículas
       </Typography>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>
+        <Alert severity="error" className="student-alert" onClose={() => setError('')}>
           {error}
         </Alert>
       )}
 
       {success && (
-        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess('')}>
+        <Alert severity="success" className="student-alert" onClose={() => setSuccess('')}>
           {success}
         </Alert>
       )}
@@ -143,156 +144,158 @@ const StudentMyEnrollments = () => {
             return true;
           })
           .map((enrollment) => (
-          <Grid item xs={12} md={6} key={enrollment.id}>
-            <Card>
-              <CardContent>
-                <Box display="flex" justifyContent="space-between" alignItems="start" mb={2}>
-                  <Typography variant="h6">{enrollment.item_name || 'Curso/Paquete'}</Typography>
-                  <Chip
-                    label={getStatusLabel(enrollment.status)}
-                    color={getStatusColor(enrollment.status)}
-                    size="small"
-                  />
-                </Box>
-                <Typography variant="body2" color="textSecondary" gutterBottom>
-                  Tipo: {enrollment.enrollment_type}
-                </Typography>
-                {enrollment.cycle_name && (
-                  <Typography variant="body2" color="textSecondary" gutterBottom>
-                    Ciclo: {enrollment.cycle_name}
-                  </Typography>
-                )}
-                {(enrollment.cycle_start_date || enrollment.cycle_end_date) && (
-                  <Typography variant="body2" color="textSecondary" gutterBottom>
-                    {enrollment.cycle_start_date
-                      ? new Date(enrollment.cycle_start_date).toLocaleDateString()
-                      : '-'}{' '}
-                    -{' '}
-                    {enrollment.cycle_end_date
-                      ? new Date(enrollment.cycle_end_date).toLocaleDateString()
-                      : '-'}
-                  </Typography>
-                )}
-                {/* Para matrículas de paquete, mostrar descripción de cursos incluidos */}
-                {enrollment.enrollment_type === 'package' && enrollment.package_courses_summary && (
-                  <Typography variant="body2" color="textSecondary" gutterBottom>
-                    Cursos incluidos: {enrollment.package_courses_summary}
-                  </Typography>
-                )}
-                <Typography variant="h6" color="primary" sx={{ mt: 2 }}>
-                  S/. {parseFloat(enrollment.item_price || 0).toFixed(2)}
-                </Typography>
-
-                {enrollment.status === 'pendiente' && (!enrollment.installments ||
-                  enrollment.installments.every((inst) => inst.status !== 'paid' && !inst.voucher_url)) && (
-                  <Box sx={{ mt: 1 }}>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      color="error"
-                      onClick={async () => {
-                        if (!window.confirm('¿Seguro que deseas cancelar esta matrícula?')) return;
-                        try {
-                          setError('');
-                          setSuccess('');
-                          await enrollmentsAPI.cancel(enrollment.id);
-                          setSuccess('Matrícula cancelada correctamente');
-                          loadEnrollments();
-                        } catch (err) {
-                          setError(err.message || 'Error al cancelar matrícula');
-                        }
-                      }}
-                    >
-                      Cancelar matrícula
-                    </Button>
-                  </Box>
-                )}
-
-                {/* Cuotas */}
-                {enrollment.installments && enrollment.installments.length > 0 && (
-                  <Box sx={{ mt: 2 }}>
-                    <Typography variant="subtitle2" gutterBottom>
-                      Cuotas:
+            <Grid item xs={12} md={6} key={enrollment.id}>
+              <Card className={`student-card student-enrollment-card ${enrollment.status}`}>
+                <CardContent>
+                  <Box display="flex" justifyContent="space-between" alignItems="start" mb={2}>
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                      {enrollment.enrollment_type === 'course' ? '📚' : '📦'} {enrollment.item_name || 'Curso/Paquete'}
                     </Typography>
-                    <TableContainer component={Paper} variant="outlined">
-                      <Table size="small">
-                        <TableHead>
-                          <TableRow>
-                            <TableCell>#</TableCell>
-                            <TableCell>Monto</TableCell>
-                            <TableCell>Vencimiento</TableCell>
-                            <TableCell>Estado</TableCell>
-                            <TableCell>Acciones</TableCell>
-                          </TableRow>
-                        </TableHead>
-                        <TableBody>
-                          {enrollment.installments.map((installment) => (
-                            <TableRow key={installment.id}>
-                              <TableCell>{installment.installment_number}</TableCell>
-                              <TableCell>S/. {parseFloat(installment.amount || 0).toFixed(2)}</TableCell>
-                              <TableCell>
-                                {installment.due_date
-                                  ? new Date(installment.due_date).toLocaleDateString()
-                                  : '-'}
-                              </TableCell>
-                              <TableCell>
-                                <Chip
-                                  label={
-                                    installment.status === 'paid'
-                                      ? 'Pagado'
-                                      : installment.status === 'overdue'
-                                      ? 'Vencido'
-                                      : 'Pendiente'
-                                  }
-                                  color={
-                                    installment.status === 'paid'
-                                      ? 'success'
-                                      : installment.status === 'overdue'
-                                      ? 'error'
-                                      : 'warning'
-                                  }
-                                  size="small"
-                                />
-                              </TableCell>
-                              <TableCell>
-                                {(installment.status === 'pending' || installment.status === 'overdue') && !installment.voucher_url && (
-                                  <Button
-                                    size="small"
-                                    startIcon={<UploadIcon />}
-                                    onClick={() => {
-                                      setSelectedEnrollment(installment);
-                                      setOpenVoucherDialog(true);
-                                    }}
-                                  >
-                                    Subir Voucher
-                                  </Button>
-                                )}
-                                {installment.voucher_url && (
-                                  <Button
-                                    size="small"
-                                    href={`http://localhost:4000${installment.voucher_url}`}
-                                    target="_blank"
-                                  >
-                                    Ver Voucher
-                                  </Button>
-                                )}
-                                {installment.rejection_reason && (
-                                  <Alert severity="error" sx={{ mt: 1 }}>
-                                    Rechazado: {installment.rejection_reason}
-                                  </Alert>
-                                )}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </TableContainer>
+                    <Chip
+                      label={getStatusLabel(enrollment.status)}
+                      className={`student-badge ${enrollment.status === 'aceptado' ? 'approved' : enrollment.status === 'pendiente' ? 'pending' : enrollment.status === 'rechazado' ? 'rejected' : 'default'}`}
+                      size="small"
+                    />
                   </Box>
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
+                  <Typography variant="body2" color="textSecondary" gutterBottom>
+                    Tipo: {enrollment.enrollment_type}
+                  </Typography>
+                  {enrollment.cycle_name && (
+                    <Typography variant="body2" color="textSecondary" gutterBottom>
+                      Ciclo: {enrollment.cycle_name}
+                    </Typography>
+                  )}
+                  {(enrollment.cycle_start_date || enrollment.cycle_end_date) && (
+                    <Typography variant="body2" color="textSecondary" gutterBottom>
+                      {enrollment.cycle_start_date
+                        ? new Date(enrollment.cycle_start_date).toLocaleDateString()
+                        : '-'}{' '}
+                      -{' '}
+                      {enrollment.cycle_end_date
+                        ? new Date(enrollment.cycle_end_date).toLocaleDateString()
+                        : '-'}
+                    </Typography>
+                  )}
+                  {/* Para matrículas de paquete, mostrar descripción de cursos incluidos */}
+                  {enrollment.enrollment_type === 'package' && enrollment.package_courses_summary && (
+                    <Typography variant="body2" color="textSecondary" gutterBottom>
+                      Cursos incluidos: {enrollment.package_courses_summary}
+                    </Typography>
+                  )}
+                  <Typography className="student-price" sx={{ mt: 2 }}>
+                    S/. {parseFloat(enrollment.item_price || 0).toFixed(2)}
+                  </Typography>
+
+                  {enrollment.status === 'pendiente' && (!enrollment.installments ||
+                    enrollment.installments.every((inst) => inst.status !== 'paid' && !inst.voucher_url)) && (
+                      <Box sx={{ mt: 1 }}>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          color="error"
+                          onClick={async () => {
+                            if (!window.confirm('¿Seguro que deseas cancelar esta matrícula?')) return;
+                            try {
+                              setError('');
+                              setSuccess('');
+                              await enrollmentsAPI.cancel(enrollment.id);
+                              setSuccess('Matrícula cancelada correctamente');
+                              loadEnrollments();
+                            } catch (err) {
+                              setError(err.message || 'Error al cancelar matrícula');
+                            }
+                          }}
+                        >
+                          Cancelar matrícula
+                        </Button>
+                      </Box>
+                    )}
+
+                  {/* Cuotas */}
+                  {enrollment.installments && enrollment.installments.length > 0 && (
+                    <Box sx={{ mt: 2 }}>
+                      <Typography variant="subtitle2" gutterBottom>
+                        Cuotas:
+                      </Typography>
+                      <TableContainer component={Paper} variant="outlined">
+                        <Table size="small">
+                          <TableHead>
+                            <TableRow>
+                              <TableCell>#</TableCell>
+                              <TableCell>Monto</TableCell>
+                              <TableCell>Vencimiento</TableCell>
+                              <TableCell>Estado</TableCell>
+                              <TableCell>Acciones</TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {enrollment.installments.map((installment) => (
+                              <TableRow key={installment.id}>
+                                <TableCell>{installment.installment_number}</TableCell>
+                                <TableCell>S/. {parseFloat(installment.amount || 0).toFixed(2)}</TableCell>
+                                <TableCell>
+                                  {installment.due_date
+                                    ? new Date(installment.due_date).toLocaleDateString()
+                                    : '-'}
+                                </TableCell>
+                                <TableCell>
+                                  <Chip
+                                    label={
+                                      installment.status === 'paid'
+                                        ? 'Pagado'
+                                        : installment.status === 'overdue'
+                                          ? 'Vencido'
+                                          : 'Pendiente'
+                                    }
+                                    color={
+                                      installment.status === 'paid'
+                                        ? 'success'
+                                        : installment.status === 'overdue'
+                                          ? 'error'
+                                          : 'warning'
+                                    }
+                                    size="small"
+                                  />
+                                </TableCell>
+                                <TableCell>
+                                  {(installment.status === 'pending' || installment.status === 'overdue') && !installment.voucher_url && (
+                                    <Button
+                                      size="small"
+                                      startIcon={<UploadIcon />}
+                                      onClick={() => {
+                                        setSelectedEnrollment(installment);
+                                        setOpenVoucherDialog(true);
+                                      }}
+                                    >
+                                      Subir Voucher
+                                    </Button>
+                                  )}
+                                  {installment.voucher_url && (
+                                    <Button
+                                      size="small"
+                                      href={`http://localhost:4000${installment.voucher_url}`}
+                                      target="_blank"
+                                    >
+                                      Ver Voucher
+                                    </Button>
+                                  )}
+                                  {installment.rejection_reason && (
+                                    <Alert severity="error" sx={{ mt: 1 }}>
+                                      Rechazado: {installment.rejection_reason}
+                                    </Alert>
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                    </Box>
+                  )}
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
       </Grid>
 
       {enrollments.length === 0 && (

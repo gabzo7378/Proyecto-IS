@@ -25,6 +25,7 @@ import {
   ExitToApp as LogoutIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
+import './student-layout.css';
 
 const drawerWidth = 240;
 
@@ -53,7 +54,7 @@ const StudentLayout = () => {
   const drawer = (
     <Box>
       <Toolbar>
-        <Typography variant="h6" noWrap component="div">
+        <Typography variant="h6" noWrap component="div" className="student-drawer-title">
           Estudiante
         </Typography>
       </Toolbar>
@@ -62,14 +63,15 @@ const StudentLayout = () => {
         {menuItems.map((item) => (
           <ListItem key={item.text} disablePadding>
             <ListItemButton
+              className="student-menu-item"
               selected={location.pathname === item.path}
               onClick={() => {
                 navigate(item.path);
                 if (isMobile) setMobileOpen(false);
               }}
             >
-              <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.text} />
+              <ListItemIcon className="student-menu-icon">{item.icon}</ListItemIcon>
+              <ListItemText primary={item.text} className="student-menu-text" />
             </ListItemButton>
           </ListItem>
         ))}
@@ -77,8 +79,8 @@ const StudentLayout = () => {
       <Divider />
       <List>
         <ListItem disablePadding>
-          <ListItemButton onClick={handleLogout}>
-            <ListItemIcon>
+          <ListItemButton onClick={handleLogout} className="student-logout-item">
+            <ListItemIcon className="student-menu-icon">
               <LogoutIcon />
             </ListItemIcon>
             <ListItemText primary="Cerrar Sesión" />
@@ -92,6 +94,7 @@ const StudentLayout = () => {
     <Box sx={{ display: 'flex' }}>
       <AppBar
         position="fixed"
+        className="student-appbar"
         sx={{
           width: { md: `calc(100% - ${drawerWidth}px)` },
           ml: { md: `${drawerWidth}px` },
@@ -103,14 +106,15 @@ const StudentLayout = () => {
             aria-label="open drawer"
             edge="start"
             onClick={handleDrawerToggle}
+            className="student-menu-button"
             sx={{ mr: 2, display: { md: 'none' } }}
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
+          <Typography variant="h6" noWrap component="div" className="student-appbar-title" sx={{ flexGrow: 1 }}>
             Sistema de Academia - Estudiante
           </Typography>
-          <Typography variant="body2" sx={{ mr: 2 }}>
+          <Typography variant="body2" className="student-appbar-user">
             {user?.name || 'Estudiante'}
           </Typography>
         </Toolbar>
@@ -123,6 +127,7 @@ const StudentLayout = () => {
           variant="temporary"
           open={mobileOpen}
           onClose={handleDrawerToggle}
+          className="student-drawer"
           ModalProps={{
             keepMounted: true,
           }}
@@ -135,6 +140,7 @@ const StudentLayout = () => {
         </Drawer>
         <Drawer
           variant="permanent"
+          className="student-drawer"
           sx={{
             display: { xs: 'none', md: 'block' },
             '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
@@ -146,6 +152,7 @@ const StudentLayout = () => {
       </Box>
       <Box
         component="main"
+        className="student-main-content"
         sx={{
           flexGrow: 1,
           p: 3,
