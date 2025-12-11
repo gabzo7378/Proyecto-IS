@@ -1,22 +1,4 @@
 services:
-  postgres:
-    image: postgres:17.2
-    container_name: academia_postgres
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: root123
-      POSTGRES_DB: academia_final
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./backend/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   backend:
     build:
       context: ./backend
@@ -24,20 +6,17 @@ services:
     container_name: academia_backend
     environment:
       JWT_SECRET: tu_clave_secreta_muy_segura_123
-      DB_HOST: postgres
+      DB_HOST: shinkansen.proxy.rlwy.net
       DB_USER: postgres
-      DB_PASSWORD: root123
-      DB_NAME: academia_final
-      DB_PORT: 5432
+      DB_PASSWORD: QUioBOZGHSYNcahekFmkrnlzSdyePWLO
+      DB_NAME: railway
+      DB_PORT: 33101
       PORT: 4000
     ports:
       - "4000:4000"
     volumes:
       - ./backend:/app
       - uploads_data:/app/uploads
-    depends_on:
-      postgres:
-        condition: service_healthy
     restart: unless-stopped
 
   frontend:
@@ -57,5 +36,4 @@ services:
     restart: unless-stopped
 
 volumes:
-  postgres_data:
   uploads_data:
