@@ -22,11 +22,19 @@ import {
   Cancel as CancelIcon,
 } from '@mui/icons-material';
 import { paymentsAPI } from '../../services/api';
+import ConfirmDialog from '../common/ConfirmDialog';
+import PromptDialog from '../common/PromptDialog';
+import './admin-dashboard.css';
 
 const AdminPaymentsComplete = () => {
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('pending');
+
+  // Estados para diálogos personalizados
+  const [confirmDialog, setConfirmDialog] = useState({ open: false, type: '', installmentId: null });
+  const [promptDialog, setPromptDialog] = useState({ open: false });
+  const [alertMessage, setAlertMessage] = useState({ open: false, message: '', type: 'info' });
 
   useEffect(() => {
     loadPayments();
@@ -40,36 +48,49 @@ const AdminPaymentsComplete = () => {
       setPayments(data);
     } catch (err) {
       console.error('Error cargando pagos:', err);
-      alert('Error al cargar pagos');
+      setAlertMessage({ open: true, message: 'Error al cargar pagos', type: 'error' });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleReject = async (installmentId) => {
-    if (!window.confirm('¿Rechazar este pago?')) return;
-    const reason = window.prompt('Ingresa la razón del rechazo (opcional):', 'Voucher ilegible / no coincide el monto / fuera de fecha');
+  const handleReject = (installmentId) => {
+    setConfirmDialog({ open: true, type: 'reject', installmentId });
+  };
+
+  const confirmReject = () => {
+    setConfirmDialog({ ...confirmDialog, open: false });
+    setPromptDialog({ open: true });
+  };
+
+  const executeReject = async (reason) => {
+    const { installmentId } = confirmDialog;
     try {
       await paymentsAPI.rejectInstallment(installmentId, reason || null);
-      alert('Pago rechazado');
+      setAlertMessage({ open: true, message: 'Pago rechazado exitosamente', type: 'success' });
       loadPayments();
     } catch (err) {
-      alert(err.message || 'Error al rechazar pago');
+      setAlertMessage({ open: true, message: err.message || 'Error al rechazar pago', type: 'error' });
     }
   };
 
-  const handleApprove = async (installmentId) => {
-    if (!window.confirm('¿Aprobar este pago?')) return;
+  const handleApprove = (installmentId) => {
+    setConfirmDialog({ open: true, type: 'approve', installmentId });
+  };
+
+  const executeApprove = async () => {
+    const { installmentId } = confirmDialog;
+    setConfirmDialog({ ...confirmDialog, open: false });
     try {
       const res = await paymentsAPI.approveInstallment(installmentId);
       const { cycle_start_date, cycle_end_date } = res || {};
       const datesMsg = (cycle_start_date && cycle_end_date)
-        ? `\nCiclo: ${new Date(cycle_start_date).toLocaleDateString()} - ${new Date(cycle_end_date).toLocaleDateString()}`
+        ? ` Ciclo: ${new Date(cycle_start_date).toLocaleDateString()} - ${new Date(cycle_end_date).toLocaleDateString()}`
         : '';
-      alert(`Pago aprobado correctamente.${datesMsg}`);
+      setAlertMessage({ open: true, message: `Pago aprobado correctamente.${datesMsg}`, type: 'success' });
       loadPayments();
     } catch (err) {
-      alert(err.message || 'Error al aprobar pago');
+      setAlertMessage({ open: true, message: err.message || 'Error al aprobar pago', type: 'error' });
     }
   };
 
@@ -104,8 +125,8 @@ const AdminPaymentsComplete = () => {
   };
 
   return (
-    <Box>
-      <Typography variant="h4" gutterBottom>
+    <Box className="admin-dashboard">
+      <Typography variant="h4" gutterBottom className="admin-dashboard-title">
         Gestión de Pagos
       </Typography>
 
@@ -125,42 +146,43 @@ const AdminPaymentsComplete = () => {
         </TextField>
       </Box>
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
+      <TableContainer component={Paper} className="admin-table-container">
+        <Table className="admin-table">
+          <TableHead className="admin-table-head">
             <TableRow>
-              <TableCell>ID</TableCell>
-              <TableCell>Estudiante</TableCell>
-              <TableCell>DNI</TableCell>
-              <TableCell>Curso/Paquete</TableCell>
-              <TableCell>Monto</TableCell>
-              <TableCell>Fecha Vencimiento</TableCell>
-              <TableCell>Estado</TableCell>
-              <TableCell>Voucher</TableCell>
-              <TableCell>Acciones</TableCell>
+              <TableCell className="admin-table-head-cell">Estudiante</TableCell>
+              <TableCell className="admin-table-head-cell">DNI</TableCell>
+              <TableCell className="admin-table-head-cell">Curso/Paquete</TableCell>
+              <TableCell className="admin-table-head-cell">Monto</TableCell>
+              <TableCell className="admin-table-head-cell">Fecha Vencimiento</TableCell>
+              <TableCell className="admin-table-head-cell">Estado</TableCell>
+              <TableCell className="admin-table-head-cell">Voucher</TableCell>
+              <TableCell className="admin-table-head-cell">Acciones</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {payments.map((payment) => (
-              <TableRow key={payment.id}>
-                <TableCell>{payment.id}</TableCell>
-                <TableCell>
-                  {payment.first_name} {payment.last_name}
+              <TableRow key={payment.id} className="admin-table-row">
+                <TableCell className="admin-table-cell">
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    {payment.first_name} {payment.last_name}
+                  </Typography>
                 </TableCell>
-                <TableCell>{payment.dni}</TableCell>
-                <TableCell>{payment.item_name || '-'}</TableCell>
-                <TableCell>S/. {parseFloat(payment.amount || 0).toFixed(2)}</TableCell>
-                <TableCell>
+                <TableCell className="admin-table-cell">{payment.dni}</TableCell>
+                <TableCell className="admin-table-cell">{payment.item_name || '-'}</TableCell>
+                <TableCell className="admin-table-cell">S/. {parseFloat(payment.amount || 0).toFixed(2)}</TableCell>
+                <TableCell className="admin-table-cell">
                   {payment.due_date ? new Date(payment.due_date).toLocaleDateString() : '-'}
                 </TableCell>
-                <TableCell>
+                <TableCell className="admin-table-cell">
                   <Chip
                     label={getStatusLabel(payment.status_ui || payment.status)}
                     color={getStatusColor(payment.status_ui || payment.status)}
                     size="small"
+                    className="admin-chip"
                   />
                 </TableCell>
-                <TableCell>
+                <TableCell className="admin-table-cell">
                   {payment.voucher_url ? (
                     <Button
                       size="small"
@@ -176,7 +198,7 @@ const AdminPaymentsComplete = () => {
                     </Typography>
                   )}
                 </TableCell>
-                <TableCell>
+                <TableCell className="admin-table-cell">
                   {payment.status === 'pending' && (
                     <>
                       {payment.voucher_url && (
@@ -224,9 +246,46 @@ const AdminPaymentsComplete = () => {
           </Box>
         )}
       </TableContainer>
+
+      {/* Diálogo de Confirmación */}
+      <ConfirmDialog
+        open={confirmDialog.open && confirmDialog.type !== ''}
+        onClose={() => setConfirmDialog({ open: false, type: '', installmentId: null })}
+        onConfirm={confirmDialog.type === 'approve' ? executeApprove : confirmReject}
+        title={confirmDialog.type === 'approve' ? '¿Aprobar pago?' : '¿Rechazar pago?'}
+        message={confirmDialog.type === 'approve'
+          ? 'Esta acción marcará el pago como aprobado y activará la matrícula del estudiante.'
+          : 'El pago será marcado como rechazado y se notificará al estudiante.'}
+        confirmText={confirmDialog.type === 'approve' ? 'Aprobar' : 'Continuar'}
+        type={confirmDialog.type === 'approve' ? 'success' : 'warning'}
+      />
+
+      {/* Diálogo de Razón de Rechazo */}
+      <PromptDialog
+        open={promptDialog.open}
+        onClose={() => setPromptDialog({ open: false })}
+        onConfirm={executeReject}
+        title="Razón del rechazo"
+        message="Ingresa el motivo por el cual se rechaza este pago (opcional)"
+        label="Razón"
+        defaultValue="Voucher ilegible / no coincide el monto /fuera de fecha"
+        placeholder="Escribe la razón aquí..."
+        multiline
+      />
+
+      {/* Mensaje de Alerta */}
+      <ConfirmDialog
+        open={alertMessage.open}
+        onClose={() => setAlertMessage({ ...alertMessage, open: false })}
+        onConfirm={() => setAlertMessage({ ...alertMessage, open: false })}
+        title={alertMessage.type === 'success' ? 'Éxito' : alertMessage.type === 'error' ? 'Error' : 'Información'}
+        message={alertMessage.message}
+        confirmText="Entendido"
+        cancelText=""
+        type={alertMessage.type}
+      />
     </Box>
   );
 };
 
 export default AdminPaymentsComplete;
-

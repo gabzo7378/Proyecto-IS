@@ -23,6 +23,8 @@ import {
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import { cyclesAPI } from '../../services/api';
 import './admin-dashboard.css';
+import { useDialog } from '../../hooks/useDialog';
+import DialogWrapper from '../common/DialogWrapper';
 
 const AdminCycles = () => {
   const [cycles, setCycles] = useState([]);
@@ -37,6 +39,8 @@ const AdminCycles = () => {
     status: 'open',
   });
 
+  const { confirmDialog, alertDialog, showConfirm, showAlert, closeConfirm, closeAlert } = useDialog();
+
   useEffect(() => {
     loadCycles();
   }, []);
@@ -48,7 +52,7 @@ const AdminCycles = () => {
       setCycles(data);
     } catch (err) {
       console.error('Error cargando ciclos:', err);
-      alert('Error al cargar ciclos');
+      showAlert('Error al cargar ciclos', 'error');
     } finally {
       setLoading(false);
     }
@@ -93,18 +97,26 @@ const AdminCycles = () => {
       loadCycles();
     } catch (err) {
       console.error('Error guardando ciclo:', err);
-      alert(err.message || 'Error al guardar ciclo');
+      showAlert(err.message || 'Error al guardar ciclo', 'error');
     }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('¿Estás seguro de eliminar este ciclo?')) return;
+    const confirmed = await showConfirm({
+      title: '¿Eliminar ciclo?',
+      message: 'Esta acción no se puede deshacer. Todos los datos asociados a este ciclo se perderán.',
+      type: 'error',
+      confirmText: 'Eliminar'
+    });
+    if (!confirmed) return;
+
     try {
       await cyclesAPI.delete(id);
+      showAlert('Ciclo eliminado exitosamente', 'success');
       loadCycles();
     } catch (err) {
       console.error('Error eliminando ciclo:', err);
-      alert(err.message || 'Error al eliminar ciclo');
+      showAlert(err.message || 'Error al eliminar ciclo', 'error');
     }
   };
 
@@ -280,6 +292,13 @@ const AdminCycles = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <DialogWrapper
+        confirmDialog={confirmDialog}
+        alertDialog={alertDialog}
+        closeConfirm={closeConfirm}
+        closeAlert={closeAlert}
+      />
     </Box>
   );
 };

@@ -23,6 +23,7 @@ import AdminCycles from './components/admin/AdminCycles';
 import AdminCoursesComplete from './components/admin/AdminCoursesComplete';
 import AdminPackages from './components/admin/AdminPackages';
 import AdminTeachers from './components/admin/AdminTeachers';
+import AdminUsers from './components/admin/AdminUsers';
 import AdminStudents from './components/admin/AdminStudents';
 import AdminEnrollmentsComplete from './components/admin/AdminEnrollmentsComplete';
 import AdminPaymentsComplete from './components/admin/AdminPaymentsComplete';
@@ -76,6 +77,7 @@ function App() {
               <Route path="courses" element={<AdminCoursesComplete />} />
               <Route path="packages" element={<AdminPackages />} />
               <Route path="teachers" element={<AdminTeachers />} />
+              <Route path="users" element={<AdminUsers />} />
               <Route path="students" element={<AdminStudents />} />
               <Route path="enrollments" element={<AdminEnrollmentsComplete />} />
               <Route path="payments" element={<AdminPaymentsComplete />} />

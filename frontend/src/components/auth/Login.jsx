@@ -150,6 +150,11 @@ const Login = () => {
                 <li>Cumplir con las evaluaciones y tareas asignadas.</li>
                 <li>Mantener el orden y limpieza en las aulas.</li>
               </ul>
+              <ul>
+                <li>
+                  Al Matricularse usted esta aceptando estas normas y cualquier incumplimiento sera notificado al apoderado
+                </li>
+              </ul>
             </div>
             <div className="modal-footer">
               <button className="btn-accept" onClick={handleAcceptRules}>

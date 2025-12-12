@@ -7,7 +7,7 @@ const Footer = () => {
             <div className="footer-container">
                 <div className="footer-section">
                     <h3>Acerca de Nosotros</h3>
-                    <p>Academia Unión de Nuevos Inteligentes - La mejor academia de preparación universitaria en Cusco. Formando a los mejores estudiantes desde 2020.</p>
+                    <p>Academia Unión de Nuevos Inteligentes - La mejor academia de preparación universitaria en Cusco. Formando a los mejores estudiantes universitarios.</p>
                 </div>
 
                 <div className="footer-section">
@@ -33,8 +33,8 @@ const Footer = () => {
                     <h3>Contacto</h3>
                     <ul>
                         <li>📧 info@academiauni.edu.pe</li>
-                        <li>📱 +51 984 123 456</li>
-                        <li>📍 Av Torrechayoc N° 123, Cusco</li>
+                        <li>📱 +51 938 865 416</li>
+                        <li>📍 Lado Izquierdo Templo Sr. de Torrechayoc</li>
                     </ul>
                     <div className="social-links">
                         <a href="#facebook" aria-label="Facebook">📘</a>
@@ -46,7 +46,7 @@ const Footer = () => {
             </div>
 
             <div className="footer-bottom">
-                <p>&copy; 2024 Academia Unión de Nuevos Inteligentes. Todos los derechos reservados.</p>
+                <p>&copy; 2025 Academia Unión de Nuevos Inteligentes. Todos los derechos reservados.</p>
             </div>
         </footer>
     );

@@ -28,12 +28,16 @@ import {
 } from '@mui/icons-material';
 import { teachersAPI } from '../../services/api';
 import './admin-dashboard.css';
+import { useDialog } from '../../hooks/useDialog';
+import DialogWrapper from '../common/DialogWrapper';
 
 const AdminTeachers = () => {
   const [teachers, setTeachers] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [form, setForm] = useState({ first_name: '', last_name: '', dni: '', phone: '', email: '', specialization: '' });
   const [searchQuery, setSearchQuery] = useState('');
+
+  const { confirmDialog, alertDialog, showConfirm, showAlert, closeConfirm, closeAlert } = useDialog();
 
   const fetchTeachers = async () => {
     try {
@@ -51,27 +55,42 @@ const AdminTeachers = () => {
       setForm({ first_name: '', last_name: '', dni: '', phone: '', email: '', specialization: '' });
       await fetchTeachers();
     } catch (err) {
-      alert(err.message || 'Error al crear docente');
+      showAlert(err.message || 'Error al crear docente', 'error');
     }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('¿Eliminar docente?')) return;
+    const confirmed = await showConfirm({
+      title: '¿Eliminar docente?',
+      message: 'Esta acción eliminará permanentemente al docente del sistema.',
+      type: 'error',
+      confirmText: 'Eliminar'
+    });
+    if (!confirmed) return;
+
     try {
       await teachersAPI.delete(id);
+      showAlert('Docente eliminado exitosamente', 'success');
       await fetchTeachers();
     } catch (err) {
-      alert(err.message || 'Error al eliminar docente');
+      showAlert(err.message || 'Error al eliminar docente', 'error');
     }
   };
 
   const handleResetPassword = async (id) => {
-    if (!window.confirm('¿Reiniciar la contraseña del docente a su DNI?')) return;
+    const confirmed = await showConfirm({
+      title: '¿Reiniciar contraseña?',
+      message: 'La contraseña del docente será restablecida a su número de DNI.',
+      type: 'warning',
+      confirmText: 'Reiniciar'
+    });
+    if (!confirmed) return;
+
     try {
       await teachersAPI.resetPassword(id);
-      alert('Contraseña restablecida al DNI');
+      showAlert('Contraseña restablecida al DNI exitosamente', 'success');
     } catch (err) {
-      alert(err.message || 'Error al restablecer contraseña');
+      showAlert(err.message || 'Error al restablecer contraseña', 'error');
     }
   };
 
@@ -233,6 +252,13 @@ const AdminTeachers = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <DialogWrapper
+        confirmDialog={confirmDialog}
+        alertDialog={alertDialog}
+        closeConfirm={closeConfirm}
+        closeAlert={closeAlert}
+      />
     </Box>
   );
 };

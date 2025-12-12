@@ -1,7 +1,9 @@
 // src/components/admin/AdminStudents.jsx
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, Paper, Table, TableHead, TableRow, TableCell, TableBody, TextField, MenuItem, Button, Divider } from '@mui/material';
+import { Box, Typography, Paper, Table, TableContainer, TableHead, TableRow, TableCell, TableBody, TextField, MenuItem, Button, Divider, InputAdornment } from '@mui/material';
+import { Search as SearchIcon } from '@mui/icons-material';
 import { coursesAPI, packagesAPI, enrollmentsAPI } from '../../services/api';
+import './admin-dashboard.css';
 
 const AdminStudents = () => {
   const [students, setStudents] = useState([]);
@@ -63,69 +65,84 @@ const AdminStudents = () => {
   useEffect(() => { fetchStudents(); fetchOfferingsData(); }, []);
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h5" sx={{ mb: 2 }}>Estudiantes</Typography>
+    <Box className="admin-dashboard">
+      <Typography variant="h4" gutterBottom className="admin-dashboard-title">
+        Estudiantes Matriculados
+      </Typography>
 
-      <Paper sx={{ p: 2, mb: 2 }}>
-        <Typography variant="subtitle1" sx={{ mb: 2 }}>Filtrar matriculados por oferta</Typography>
+      <Paper sx={{ p: 3, mb: 3 }} className="admin-filters">
+        <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
+          Filtrar estudiantes por oferta
+        </Typography>
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-          <TextField select label="Tipo" value={filterType} onChange={(e) => { setFilterType(e.target.value); setSelectedOfferingId(''); setFilteredStudents([]); }} size="small">
+          <TextField
+            select
+            label="Tipo"
+            value={filterType}
+            onChange={(e) => {
+              setFilterType(e.target.value);
+              setSelectedOfferingId('');
+              setFilteredStudents([]);
+            }}
+            size="small"
+            className="admin-input admin-select"
+          >
             <MenuItem value="course">Curso</MenuItem>
             <MenuItem value="package">Paquete</MenuItem>
           </TextField>
-          <TextField select label={filterType === 'course' ? 'Oferta de curso' : 'Oferta de paquete'} value={selectedOfferingId} onChange={(e) => setSelectedOfferingId(e.target.value)} size="small" sx={{ minWidth: 320 }}>
-            {(filterType === 'course' ? courseOfferings : packageOfferings).map(o => (
-              <MenuItem key={o.id} value={o.id}>{o.label}</MenuItem>
+          <TextField
+            select
+            label={filterType === 'course' ? 'Oferta de curso' : 'Oferta de paquete'}
+            value={selectedOfferingId}
+            onChange={(e) => setSelectedOfferingId(e.target.value)}
+            size="small"
+            sx={{ minWidth: 320 }}
+            className="admin-input admin-select"
+          >
+            {(filterType === 'course' ? courseOfferings : packageOfferings).map((o) => (
+              <MenuItem key={o.id} value={o.id}>
+                {o.label}
+              </MenuItem>
             ))}
           </TextField>
-          <Button variant="contained" onClick={applyFilter}>Aplicar</Button>
+          <Button variant="contained" onClick={applyFilter} className="admin-button admin-button-primary">
+            Aplicar Filtro
+          </Button>
         </Box>
 
-        <Divider sx={{ my: 2 }} />
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>Resultados</Typography>
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell>DNI</TableCell>
-              <TableCell>Nombre</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {filteredStudents.map(s => (
-              <TableRow key={s.enrollment_id}>
-                <TableCell>{s.dni}</TableCell>
-                <TableCell>{s.first_name} {s.last_name}</TableCell>
-              </TableRow>
-            ))}
-            {filteredStudents.length === 0 && (
+        <Divider sx={{ my: 3 }} />
+        <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
+          Resultados del Filtro
+        </Typography>
+        <TableContainer component={Paper} variant="outlined" className="admin-table-container">
+          <Table className="admin-table">
+            <TableHead className="admin-table-head">
               <TableRow>
-                <TableCell colSpan={2} align="center">Sin resultados</TableCell>
+                <TableCell className="admin-table-head-cell">DNI</TableCell>
+                <TableCell className="admin-table-head-cell">Nombre Completo</TableCell>
               </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </Paper>
-      <Paper>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>ID</TableCell>
-              <TableCell>DNI</TableCell>
-              <TableCell>Nombre</TableCell>
-              <TableCell>Teléfono</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {students.map(s => (
-              <TableRow key={s.id}>
-                <TableCell>{s.id}</TableCell>
-                <TableCell>{s.dni}</TableCell>
-                <TableCell>{s.first_name} {s.last_name}</TableCell>
-                <TableCell>{s.phone}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHead>
+            <TableBody>
+              {filteredStudents.map((s) => (
+                <TableRow key={s.enrollment_id} className="admin-table-row">
+                  <TableCell className="admin-table-cell">{s.dni}</TableCell>
+                  <TableCell className="admin-table-cell">
+                    <Typography variant="subtitle2" fontWeight="bold">
+                      {s.first_name} {s.last_name}
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {filteredStudents.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={2} align="center" sx={{ py: 3 }}>
+                    <Typography color="text.secondary">Sin resultados</Typography>
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
       </Paper>
     </Box>
   );

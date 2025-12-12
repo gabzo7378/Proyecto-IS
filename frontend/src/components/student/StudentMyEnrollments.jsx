@@ -27,6 +27,8 @@ import { Upload as UploadIcon } from '@mui/icons-material';
 import { enrollmentsAPI, paymentsAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import './student-dashboard.css';
+import { useDialog } from '../../hooks/useDialog';
+import DialogWrapper from '../common/DialogWrapper';
 
 const StudentMyEnrollments = () => {
   const { user } = useAuth();
@@ -37,6 +39,8 @@ const StudentMyEnrollments = () => {
   const [voucherFile, setVoucherFile] = useState(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  const { confirmDialog, alertDialog, showConfirm, showAlert, closeConfirm, closeAlert } = useDialog();
 
   useEffect(() => {
     if (user) {
@@ -114,10 +118,15 @@ const StudentMyEnrollments = () => {
   }
 
   return (
-    <Box className="student-content">
-      <Typography variant="h4" gutterBottom className="student-page-title">
-        Mis Matrículas
-      </Typography>
+    <Box className="student-content fade-in">
+      <Box mb={4}>
+        <Typography variant="h4" className="student-page-title">
+          Mis Matrículas
+        </Typography>
+        <Typography color="text.secondary">
+          Administra tus matrículas y realiza los pagos de las cuotas.
+        </Typography>
+      </Box>
 
       {error && (
         <Alert severity="error" className="student-alert" onClose={() => setError('')}>
@@ -145,20 +154,24 @@ const StudentMyEnrollments = () => {
           })
           .map((enrollment) => (
             <Grid item xs={12} md={6} key={enrollment.id}>
-              <Card className={`student-card student-enrollment-card ${enrollment.status}`}>
+              <Card className={`student-card student-enrollment-card course-card ${enrollment.status}`}>
                 <CardContent>
                   <Box display="flex" justifyContent="space-between" alignItems="start" mb={2}>
-                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                      {enrollment.enrollment_type === 'course' ? '📚' : '📦'} {enrollment.item_name || 'Curso/Paquete'}
-                    </Typography>
+                    <Box display="flex" gap={1}>
+                      <Chip
+                        label={enrollment.enrollment_type === 'course' ? '📚 Curso' : '📦 Paquete'}
+                        size="small"
+                        className="student-badge default"
+                      />
+                    </Box>
                     <Chip
                       label={getStatusLabel(enrollment.status)}
                       className={`student-badge ${enrollment.status === 'aceptado' ? 'approved' : enrollment.status === 'pendiente' ? 'pending' : enrollment.status === 'rechazado' ? 'rejected' : 'default'}`}
                       size="small"
                     />
                   </Box>
-                  <Typography variant="body2" color="textSecondary" gutterBottom>
-                    Tipo: {enrollment.enrollment_type}
+                  <Typography variant="h6" className="course-card-title" sx={{ mb: 2 }}>
+                    {enrollment.item_name || 'Curso/Paquete'}
                   </Typography>
                   {enrollment.cycle_name && (
                     <Typography variant="body2" color="textSecondary" gutterBottom>
@@ -188,13 +201,20 @@ const StudentMyEnrollments = () => {
 
                   {enrollment.status === 'pendiente' && (!enrollment.installments ||
                     enrollment.installments.every((inst) => inst.status !== 'paid' && !inst.voucher_url)) && (
-                      <Box sx={{ mt: 1 }}>
+                      <Box sx={{ mt: 2 }}>
                         <Button
                           variant="outlined"
                           size="small"
-                          color="error"
+                          className="student-btn-remove"
                           onClick={async () => {
-                            if (!window.confirm('¿Seguro que deseas cancelar esta matrícula?')) return;
+                            const confirmed = await showConfirm({
+                              title: '¿Cancelar matrícula?',
+                              message: 'Esta acción cancelará tu matrícula y no podrá recuperarse.',
+                              type: 'warning',
+                              confirmText: 'Cancelar Matrícula'
+                            });
+                            if (!confirmed) return;
+
                             try {
                               setError('');
                               setSuccess('');
@@ -205,6 +225,7 @@ const StudentMyEnrollments = () => {
                               setError(err.message || 'Error al cancelar matrícula');
                             }
                           }}
+                          sx={{ textTransform: 'none' }}
                         >
                           Cancelar matrícula
                         </Button>
@@ -213,19 +234,19 @@ const StudentMyEnrollments = () => {
 
                   {/* Cuotas */}
                   {enrollment.installments && enrollment.installments.length > 0 && (
-                    <Box sx={{ mt: 2 }}>
-                      <Typography variant="subtitle2" gutterBottom>
-                        Cuotas:
+                    <Box sx={{ mt: 3 }}>
+                      <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 700, mb: 1.5 }}>
+                        💳 Cuotas de Pago
                       </Typography>
-                      <TableContainer component={Paper} variant="outlined">
+                      <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden' }}>
                         <Table size="small">
                           <TableHead>
-                            <TableRow>
-                              <TableCell>#</TableCell>
-                              <TableCell>Monto</TableCell>
-                              <TableCell>Vencimiento</TableCell>
-                              <TableCell>Estado</TableCell>
-                              <TableCell>Acciones</TableCell>
+                            <TableRow sx={{ bgcolor: '#f8fafc' }}>
+                              <TableCell sx={{ fontWeight: 700, color: '#475569' }}>#</TableCell>
+                              <TableCell sx={{ fontWeight: 700, color: '#475569' }}>Monto</TableCell>
+                              <TableCell sx={{ fontWeight: 700, color: '#475569' }}>Vencimiento</TableCell>
+                              <TableCell sx={{ fontWeight: 700, color: '#475569' }}>Estado</TableCell>
+                              <TableCell sx={{ fontWeight: 700, color: '#475569' }}>Acciones</TableCell>
                             </TableRow>
                           </TableHead>
                           <TableBody>
@@ -261,11 +282,14 @@ const StudentMyEnrollments = () => {
                                   {(installment.status === 'pending' || installment.status === 'overdue') && !installment.voucher_url && (
                                     <Button
                                       size="small"
+                                      variant="contained"
+                                      className="student-btn-primary"
                                       startIcon={<UploadIcon />}
                                       onClick={() => {
                                         setSelectedEnrollment(installment);
                                         setOpenVoucherDialog(true);
                                       }}
+                                      sx={{ textTransform: 'none' }}
                                     >
                                       Subir Voucher
                                     </Button>
@@ -273,8 +297,11 @@ const StudentMyEnrollments = () => {
                                   {installment.voucher_url && (
                                     <Button
                                       size="small"
+                                      variant="outlined"
+                                      className="student-btn-secondary"
                                       href={`http://localhost:4000${installment.voucher_url}`}
                                       target="_blank"
+                                      sx={{ textTransform: 'none' }}
                                     >
                                       Ver Voucher
                                     </Button>
@@ -299,14 +326,19 @@ const StudentMyEnrollments = () => {
       </Grid>
 
       {enrollments.length === 0 && (
-        <Box p={3} textAlign="center">
-          <Typography color="textSecondary">No tienes matrículas registradas</Typography>
+        <Box className="empty-search-state">
+          <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
+            📋 No tienes matrículas registradas
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Dirígete a "Cursos Disponibles" para comenzar tu matrícula
+          </Typography>
         </Box>
       )}
 
       {/* Dialog para subir voucher */}
       <Dialog open={openVoucherDialog} onClose={() => setOpenVoucherDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Subir Voucher de Pago</DialogTitle>
+        <DialogTitle className="student-dialog-title">📤 Subir Voucher de Pago</DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
             {selectedEnrollment && (() => {
@@ -350,17 +382,25 @@ const StudentMyEnrollments = () => {
             })()}
           </Box>
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ p: 2, borderTop: '1px solid #f1f5f9' }}>
           <Button onClick={() => setOpenVoucherDialog(false)}>Cancelar</Button>
           <Button
             onClick={() => handleUploadVoucher(selectedEnrollment?.id)}
             variant="contained"
+            className="student-btn-primary"
             disabled={!voucherFile}
           >
             Subir Voucher
           </Button>
         </DialogActions>
       </Dialog>
+
+      <DialogWrapper
+        confirmDialog={confirmDialog}
+        alertDialog={alertDialog}
+        closeConfirm={closeConfirm}
+        closeAlert={closeAlert}
+      />
     </Box>
   );
 };

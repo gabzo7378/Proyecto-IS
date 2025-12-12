@@ -50,8 +50,8 @@ const LandingPage = () => {
 
                         <div className="hero-stats">
                             <div className="stat-item">
-                                <div className="stat-number">500+</div>
-                                <div className="stat-label">Estudiantes</div>
+                                <div className="stat-number">150+</div>
+                                <div className="stat-label">Ingresantes a la UNSAAC y otras universidades del pais</div>
                             </div>
                             <div className="stat-divider"></div>
                             <div className="stat-item">
@@ -69,7 +69,7 @@ const LandingPage = () => {
                     <div className="hero-decoration">
                         <div className="floating-card card-1">
                             <div className="card-icon">📚</div>
-                            <div className="card-text">Cursos Especializados</div>
+                            <div className="card-text">Cursos Pre Universitarios</div>
                         </div>
                         <div className="floating-card card-2">
                             <div className="card-icon">🏆</div>
@@ -89,17 +89,17 @@ const LandingPage = () => {
                         <div className="feature-card">
                             <div className="feature-icon">🎯</div>
                             <h3>Metodología Efectiva</h3>
-                            <p>Sistema de enseñanza probado que garantiza resultados excepcionales</p>
+                            <p>Metodologia de enseñanza reconocida por la Universidad Peruana Cayetano Heredia</p>
                         </div>
                         <div className="feature-card">
                             <div className="feature-icon">💻</div>
                             <h3>Plataforma Digital</h3>
-                            <p>Accede a tus clases y materiales desde cualquier lugar</p>
+                            <p>Accede a tus matriculas y horarios desde la red</p>
                         </div>
                         <div className="feature-card">
                             <div className="feature-icon">📊</div>
-                            <h3>Seguimiento Personalizado</h3>
-                            <p>Monitoreo constante de tu progreso académico</p>
+                            <h3>Monitoreo Constante</h3>
+                            <p>Control de Disciplina y Monitoreo constante de los Alumnos</p>
                         </div>
                         <div className="feature-card">
                             <div className="feature-icon">🌟</div>

@@ -1,12 +1,12 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import {
-  Box, Typography, Paper, Button, Dialog, DialogTitle, DialogContent, 
-  DialogActions, TextField, FormControl, InputLabel, Select, MenuItem, 
+  Box, Typography, Paper, Button, Dialog, DialogTitle, DialogContent,
+  DialogActions, TextField, FormControl, InputLabel, Select, MenuItem,
   ToggleButton, ToggleButtonGroup, Chip, CircularProgress
 } from '@mui/material';
-import { 
-  Delete as DeleteIcon, 
-  CalendarViewWeek as CalendarIcon, 
+import {
+  Delete as DeleteIcon,
+  CalendarViewWeek as CalendarIcon,
   List as ListIcon,
   Add as AddIcon,
   Room as RoomIcon,
@@ -15,6 +15,8 @@ import {
 } from '@mui/icons-material';
 
 import './admin-dashboard.css';
+import { useDialog } from '../../hooks/useDialog';
+import DialogWrapper from '../common/DialogWrapper';
 
 const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 const HOURS = Array.from({ length: 15 }, (_, i) => i + 7); // 7:00 - 21:00
@@ -34,7 +36,7 @@ const AdminSchedules = () => {
   const [viewMode, setViewMode] = useState('calendar');
   const [filterType, setFilterType] = useState('course'); // 'course' | 'package'
   const [selectedFilterId, setSelectedFilterId] = useState('');
-  
+
   // Data
   const [schedules, setSchedules] = useState([]);
   const [offerings, setOfferings] = useState([]);         // Ofertas de Cursos
@@ -46,11 +48,13 @@ const AdminSchedules = () => {
   const [editingSchedule, setEditingSchedule] = useState(null);
   const [formData, setFormData] = useState({
     course_offering_id: '',
-    day_of_week: [], 
+    day_of_week: [],
     start_time: '',
     end_time: '',
     classroom: ''
   });
+
+  const { confirmDialog, alertDialog, showConfirm, showAlert, closeConfirm, closeAlert } = useDialog();
 
   // --- CARGA DE DATOS INICIALES (Listas para los selects) ---
   useEffect(() => {
@@ -62,13 +66,13 @@ const AdminSchedules = () => {
         // 1. Cargar Cursos (para el dropdown de "Ver por Curso" y el formulario)
         const resCourses = await fetch('http://localhost:4000/api/courses', { headers });
         const dataCourses = await resCourses.json();
-        
+
         // Aplanar ofertas de cursos
         const flatOfferings = [];
         dataCourses.forEach(c => {
-            if(c.offerings) c.offerings.forEach(o => {
-                flatOfferings.push({ ...o, course_name: c.name });
-            });
+          if (c.offerings) c.offerings.forEach(o => {
+            flatOfferings.push({ ...o, course_name: c.name });
+          });
         });
         setOfferings(flatOfferings);
 
@@ -88,7 +92,7 @@ const AdminSchedules = () => {
   // --- CARGA DE HORARIOS (Cuando cambia el filtro) ---
   useEffect(() => {
     if (!selectedFilterId) return;
-    
+
     const fetchSchedules = async () => {
       setLoading(true);
       const token = localStorage.getItem('token');
@@ -96,16 +100,16 @@ const AdminSchedules = () => {
 
       // Usamos los endpoints específicos definidos en schedules.py
       if (filterType === 'course') {
-         url = `http://localhost:4000/api/schedules/offering/${selectedFilterId}`;
+        url = `http://localhost:4000/api/schedules/offering/${selectedFilterId}`;
       } else {
-         url = `http://localhost:4000/api/schedules/package-offering/${selectedFilterId}`;
+        url = `http://localhost:4000/api/schedules/package-offering/${selectedFilterId}`;
       }
 
       try {
         const res = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
         if (res.ok) {
-            const data = await res.json();
-            setSchedules(data);
+          const data = await res.json();
+          setSchedules(data);
         }
       } catch (err) { console.error(err); }
       finally { setLoading(false); }
@@ -130,7 +134,7 @@ const AdminSchedules = () => {
       setEditingSchedule(null);
       // Si estamos en modo "Curso Individual", pre-seleccionamos ese curso en el form
       const defaultCourse = filterType === 'course' ? selectedFilterId : '';
-      
+
       setFormData({
         course_offering_id: defaultCourse,
         day_of_week: preSelectedDay ? (viewMode === 'list' ? [preSelectedDay] : preSelectedDay) : [],
@@ -144,7 +148,7 @@ const AdminSchedules = () => {
 
   const calculateEndTime = (startTime) => {
     const [h, m] = startTime.split(':').map(Number);
-    const endH = h + 2; 
+    const endH = h + 2;
     return `${endH.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
   };
 
@@ -158,7 +162,7 @@ const AdminSchedules = () => {
     try {
       const token = localStorage.getItem('token');
       const method = editingSchedule ? 'PUT' : 'POST';
-      const url = editingSchedule 
+      const url = editingSchedule
         ? `http://localhost:4000/api/schedules/${editingSchedule.id}`
         : 'http://localhost:4000/api/schedules';
 
@@ -166,46 +170,57 @@ const AdminSchedules = () => {
 
       // Manejo de creación múltiple (solo al crear nuevo)
       if (!editingSchedule && Array.isArray(formData.day_of_week) && formData.day_of_week.length > 0) {
-         for (const day of formData.day_of_week) {
-            await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ ...formData, day_of_week: day })
-            });
-         }
-      } else {
-         await fetch(url, {
-            method,
+        for (const day of formData.day_of_week) {
+          await fetch(url, {
+            method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify(payload)
-         });
+            body: JSON.stringify({ ...formData, day_of_week: day })
+          });
+        }
+      } else {
+        await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify(payload)
+        });
       }
-      
+
       // Recargar los horarios actuales
       // Disparamos un re-fetch "sucio" actualizando el ID
       const currentId = selectedFilterId;
-      setSelectedFilterId(''); 
+      setSelectedFilterId('');
       setTimeout(() => setSelectedFilterId(currentId), 50);
-      
+
       handleClose();
     } catch (err) { console.error('Error al guardar'); }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('¿Eliminar sesión?')) return;
+    const confirmed = await showConfirm({
+      title: '¿Eliminar sesión?',
+      message: 'Esta acción eliminará permanentemente esta sesión de clase.',
+      type: 'error',
+      confirmText: 'Eliminar'
+    });
+    if (!confirmed) return;
+
     try {
       const token = localStorage.getItem('token');
       await fetch(`http://localhost:4000/api/schedules/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
+      showAlert('Sesión eliminada exitosamente', 'success');
       // Recargar
       const currentId = selectedFilterId;
       setSelectedFilterId('');
       setTimeout(() => setSelectedFilterId(currentId), 50);
-      
-      if(openDialog) handleClose();
-    } catch (err) { console.error(err); }
+
+      if (openDialog) handleClose();
+    } catch (err) {
+      console.error(err);
+      showAlert('Error al eliminar sesión', 'error');
+    }
   };
 
   // --- HELPERS ESTILO ---
@@ -219,93 +234,93 @@ const AdminSchedules = () => {
   const getPositionStyle = (startTime, endTime) => {
     const startParts = startTime.split(':').map(Number);
     const endParts = endTime.split(':').map(Number);
-    const topPixels = startParts[1]; 
+    const topPixels = startParts[1];
     const durationMinutes = ((endParts[0] * 60 + endParts[1]) - (startParts[0] * 60 + startParts[1]));
-    
+
     return {
-      top: `${topPixels}px`,    
+      top: `${topPixels}px`,
       height: `${durationMinutes}px`
     };
   };
 
   return (
     <Box className="admin-fade-in" sx={{ p: 3, maxWidth: '1600px', margin: '0 auto' }}>
-      
+
       {/* HEADER Y FILTROS */}
       <Box sx={{ mb: 4 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography className="admin-dashboard-title">
-               Planificador Académico
-            </Typography>
-            <Button 
-                variant="contained" 
-                startIcon={<AddIcon />}
-                className="admin-button-primary"
-                onClick={() => handleOpen()}
-            >
-                Nueva Sesión
-            </Button>
+          <Typography className="admin-dashboard-title">
+            Planificador Académico
+          </Typography>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            className="admin-button-primary"
+            onClick={() => handleOpen()}
+          >
+            Nueva Sesión
+          </Button>
         </Box>
 
         {/* BARRA DE CONTROL PRINCIPAL */}
         <Paper sx={{ p: 2, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap', borderRadius: 2 }}>
-            
-            {/* 1. Selector de TIPO (Curso vs Paquete) */}
-            <ToggleButtonGroup
-                color="primary"
-                value={filterType}
-                exclusive
-                onChange={(e, newVal) => {
-                    if(!newVal) return;
-                    setFilterType(newVal);
-                    setSelectedFilterId(''); // Resetear selección al cambiar modo
-                }}
-                size="small"
-            >
-                <ToggleButton value="course">
-                    <SchoolIcon sx={{ mr: 1 }} /> Curso Individual
-                </ToggleButton>
-                <ToggleButton value="package">
-                    <PackageIcon sx={{ mr: 1 }} /> Ver por Paquete
-                </ToggleButton>
-            </ToggleButtonGroup>
 
-            {/* 2. Dropdown Dinámico */}
-            <FormControl size="small" sx={{ minWidth: 300, flexGrow: 1 }}>
-                <InputLabel>
-                    {filterType === 'course' ? 'Seleccionar Curso' : 'Seleccionar Paquete'}
-                </InputLabel>
-                <Select
-                    value={selectedFilterId}
-                    label={filterType === 'course' ? 'Seleccionar Curso' : 'Seleccionar Paquete'}
-                    onChange={(e) => setSelectedFilterId(e.target.value)}
-                >
-                    {filterType === 'course' ? (
-                        offerings.map(o => (
-                            <MenuItem key={o.id} value={o.id}>
-                                {o.course_name} - {o.group_label} ({o.cycle_name})
-                            </MenuItem>
-                        ))
-                    ) : (
-                        packageOfferings.map(p => (
-                            <MenuItem key={p.id} value={p.id}>
-                                <strong>{p.package_name}</strong> &nbsp; — {p.group_label} ({p.cycle_name})
-                            </MenuItem>
-                        ))
-                    )}
-                </Select>
-            </FormControl>
+          {/* 1. Selector de TIPO (Curso vs Paquete) */}
+          <ToggleButtonGroup
+            color="primary"
+            value={filterType}
+            exclusive
+            onChange={(e, newVal) => {
+              if (!newVal) return;
+              setFilterType(newVal);
+              setSelectedFilterId(''); // Resetear selección al cambiar modo
+            }}
+            size="small"
+          >
+            <ToggleButton value="course">
+              <SchoolIcon sx={{ mr: 1 }} /> Curso Individual
+            </ToggleButton>
+            <ToggleButton value="package">
+              <PackageIcon sx={{ mr: 1 }} /> Ver por Paquete
+            </ToggleButton>
+          </ToggleButtonGroup>
 
-            {/* 3. Selector de VISTA (Calendario vs Lista) */}
-            <ToggleButtonGroup
-                value={viewMode}
-                exclusive
-                onChange={(e, newView) => { if(newView) setViewMode(newView) }}
-                size="small"
+          {/* 2. Dropdown Dinámico */}
+          <FormControl size="small" sx={{ minWidth: 300, flexGrow: 1 }}>
+            <InputLabel>
+              {filterType === 'course' ? 'Seleccionar Curso' : 'Seleccionar Paquete'}
+            </InputLabel>
+            <Select
+              value={selectedFilterId}
+              label={filterType === 'course' ? 'Seleccionar Curso' : 'Seleccionar Paquete'}
+              onChange={(e) => setSelectedFilterId(e.target.value)}
             >
-                <ToggleButton value="calendar"><CalendarIcon /></ToggleButton>
-                <ToggleButton value="list"><ListIcon /></ToggleButton>
-            </ToggleButtonGroup>
+              {filterType === 'course' ? (
+                offerings.map(o => (
+                  <MenuItem key={o.id} value={o.id}>
+                    {o.course_name} - {o.group_label} ({o.cycle_name})
+                  </MenuItem>
+                ))
+              ) : (
+                packageOfferings.map(p => (
+                  <MenuItem key={p.id} value={p.id}>
+                    <strong>{p.package_name}</strong> &nbsp; — {p.group_label} ({p.cycle_name})
+                  </MenuItem>
+                ))
+              )}
+            </Select>
+          </FormControl>
+
+          {/* 3. Selector de VISTA (Calendario vs Lista) */}
+          <ToggleButtonGroup
+            value={viewMode}
+            exclusive
+            onChange={(e, newView) => { if (newView) setViewMode(newView) }}
+            size="small"
+          >
+            <ToggleButton value="calendar"><CalendarIcon /></ToggleButton>
+            <ToggleButton value="list"><ListIcon /></ToggleButton>
+          </ToggleButtonGroup>
 
         </Paper>
       </Box>
@@ -313,108 +328,108 @@ const AdminSchedules = () => {
       {/* LOADING STATE */}
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', p: 5 }}>
-            <CircularProgress />
+          <CircularProgress />
         </Box>
       ) : (
         <>
-        {/* --- VISTA CALENDARIO --- */}
-        {viewMode === 'calendar' && (
+          {/* --- VISTA CALENDARIO --- */}
+          {viewMode === 'calendar' && (
             <Paper className="calendar-container" sx={{ overflowX: 'auto', p: 2, borderRadius: 3 }}>
-            <div className="calendar-grid">
+              <div className="calendar-grid">
                 <div className="calendar-header-cell time-col">Hora</div>
                 {DAYS.map(day => (
-                <div key={day} className="calendar-header-cell day-col">{day}</div>
+                  <div key={day} className="calendar-header-cell day-col">{day}</div>
                 ))}
 
                 {HOURS.map(hour => (
-                <React.Fragment key={hour}>
+                  <React.Fragment key={hour}>
                     <div className="calendar-time-cell">
-                    {`${hour.toString().padStart(2, '0')}:00`}
+                      {`${hour.toString().padStart(2, '0')}:00`}
                     </div>
-                    
-                    {DAYS.map(day => (
-                    <div 
-                        key={`${day}-${hour}`} 
-                        className="calendar-cell"
-                        onClick={() => handleOpen(null, day, `${hour.toString().padStart(2,'0')}:00`)}
-                    >
-                        {schedules
-                            .filter(s => s.day_of_week === day)
-                            .filter(s => parseInt(s.start_time.split(':')[0]) === hour)
-                            .map(schedule => {
-                                const styles = getPositionStyle(schedule.start_time, schedule.end_time);
-                                const colors = getCourseColor(schedule.course_name || 'X');
-                                
-                                return (
-                                    <div
-                                        key={schedule.id}
-                                        className="calendar-event admin-fade-in"
-                                        style={{
-                                            ...styles,
-                                            backgroundColor: colors.bg,
-                                            borderLeft: `4px solid ${colors.border}`,
-                                            color: colors.text
-                                        }}
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleOpen(schedule);
-                                        }}
-                                        title={`${schedule.course_name} (${schedule.start_time} - ${schedule.end_time})`}
-                                    >
-                                        <div className="event-time" style={{ color: colors.border }}>
-                                            {schedule.start_time.slice(0,5)} - {schedule.end_time.slice(0,5)}
-                                        </div>
-                                        <div className="event-title">
-                                            {schedule.course_name}
-                                        </div>
-                                        <div className="event-details">
-                                            {schedule.classroom && <span>Aula {schedule.classroom}</span>}
-                                        </div>
-                                    </div>
-                                );
-                            })
-                        }
-                    </div>
-                    ))}
-                </React.Fragment>
-                ))}
-            </div>
-            </Paper>
-        )}
 
-        {/* --- VISTA LISTA --- */}
-        {viewMode === 'list' && (
-             <Paper className="admin-table-container">
-                <table className="admin-table" style={{ width: '100%' }}>
-                    <thead className="admin-table-head">
-                        <tr>
-                            <th className="admin-table-head-cell">Curso</th>
-                            <th className="admin-table-head-cell">Día</th>
-                            <th className="admin-table-head-cell">Horario</th>
-                            <th className="admin-table-head-cell">Aula</th>
-                            <th className="admin-table-head-cell"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {schedules.map((s) => (
-                            <tr key={s.id} className="admin-table-row">
-                                <td className="admin-table-cell font-bold">{s.course_name}</td>
-                                <td className="admin-table-cell">{s.day_of_week}</td>
-                                <td className="admin-table-cell">{s.start_time.slice(0,5)} - {s.end_time.slice(0,5)}</td>
-                                <td className="admin-table-cell">{s.classroom}</td>
-                                <td className="admin-table-cell">
-                                    <Button size="small" onClick={() => handleOpen(s)}>Editar</Button>
-                                    <Button size="small" color="error" onClick={() => handleDelete(s.id)}>Borrar</Button>
-                                </td>
-                            </tr>
-                        ))}
-                        {schedules.length === 0 && (
-                            <tr><td colSpan={5} style={{textAlign:'center', padding:20}}>No hay horarios asignados</td></tr>
-                        )}
-                    </tbody>
-                </table>
-             </Paper>
-        )}
+                    {DAYS.map(day => (
+                      <div
+                        key={`${day}-${hour}`}
+                        className="calendar-cell"
+                        onClick={() => handleOpen(null, day, `${hour.toString().padStart(2, '0')}:00`)}
+                      >
+                        {schedules
+                          .filter(s => s.day_of_week === day)
+                          .filter(s => parseInt(s.start_time.split(':')[0]) === hour)
+                          .map(schedule => {
+                            const styles = getPositionStyle(schedule.start_time, schedule.end_time);
+                            const colors = getCourseColor(schedule.course_name || 'X');
+
+                            return (
+                              <div
+                                key={schedule.id}
+                                className="calendar-event admin-fade-in"
+                                style={{
+                                  ...styles,
+                                  backgroundColor: colors.bg,
+                                  borderLeft: `4px solid ${colors.border}`,
+                                  color: colors.text
+                                }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpen(schedule);
+                                }}
+                                title={`${schedule.course_name} (${schedule.start_time} - ${schedule.end_time})`}
+                              >
+                                <div className="event-time" style={{ color: colors.border }}>
+                                  {schedule.start_time.slice(0, 5)} - {schedule.end_time.slice(0, 5)}
+                                </div>
+                                <div className="event-title">
+                                  {schedule.course_name}
+                                </div>
+                                <div className="event-details">
+                                  {schedule.classroom && <span>Aula {schedule.classroom}</span>}
+                                </div>
+                              </div>
+                            );
+                          })
+                        }
+                      </div>
+                    ))}
+                  </React.Fragment>
+                ))}
+              </div>
+            </Paper>
+          )}
+
+          {/* --- VISTA LISTA --- */}
+          {viewMode === 'list' && (
+            <Paper className="admin-table-container">
+              <table className="admin-table" style={{ width: '100%' }}>
+                <thead className="admin-table-head">
+                  <tr>
+                    <th className="admin-table-head-cell">Curso</th>
+                    <th className="admin-table-head-cell">Día</th>
+                    <th className="admin-table-head-cell">Horario</th>
+                    <th className="admin-table-head-cell">Aula</th>
+                    <th className="admin-table-head-cell"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {schedules.map((s) => (
+                    <tr key={s.id} className="admin-table-row">
+                      <td className="admin-table-cell font-bold">{s.course_name}</td>
+                      <td className="admin-table-cell">{s.day_of_week}</td>
+                      <td className="admin-table-cell">{s.start_time.slice(0, 5)} - {s.end_time.slice(0, 5)}</td>
+                      <td className="admin-table-cell">{s.classroom}</td>
+                      <td className="admin-table-cell">
+                        <Button size="small" onClick={() => handleOpen(s)}>Editar</Button>
+                        <Button size="small" color="error" onClick={() => handleDelete(s.id)}>Borrar</Button>
+                      </td>
+                    </tr>
+                  ))}
+                  {schedules.length === 0 && (
+                    <tr><td colSpan={5} style={{ textAlign: 'center', padding: 20 }}>No hay horarios asignados</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </Paper>
+          )}
         </>
       )}
 
@@ -442,46 +457,53 @@ const AdminSchedules = () => {
             </FormControl>
 
             <Box sx={{ display: 'flex', gap: 2 }}>
-                {!editingSchedule ? (
-                    <FormControl fullWidth>
-                        <InputLabel>Día(s)</InputLabel>
-                        <Select
-                            multiple={viewMode === 'list'}
-                            value={formData.day_of_week}
-                            label="Día(s)"
-                            onChange={(e) => setFormData({ ...formData, day_of_week: e.target.value })}
-                            renderValue={(sel) => Array.isArray(sel) ? sel.join(', ') : sel}
-                        >
-                            {DAYS.map(day => <MenuItem key={day} value={day}>{day}</MenuItem>)}
-                        </Select>
-                    </FormControl>
-                ) : (
-                    <TextField fullWidth label="Día" value={formData.day_of_week} disabled />
-                )}
-                <TextField
-                    fullWidth label="Aula" value={formData.classroom}
-                    onChange={(e) => setFormData({ ...formData, classroom: e.target.value })}
-                    InputProps={{ startAdornment: <RoomIcon color="action" sx={{mr:1}}/> }}
-                />
+              {!editingSchedule ? (
+                <FormControl fullWidth>
+                  <InputLabel>Día(s)</InputLabel>
+                  <Select
+                    multiple={viewMode === 'list'}
+                    value={formData.day_of_week}
+                    label="Día(s)"
+                    onChange={(e) => setFormData({ ...formData, day_of_week: e.target.value })}
+                    renderValue={(sel) => Array.isArray(sel) ? sel.join(', ') : sel}
+                  >
+                    {DAYS.map(day => <MenuItem key={day} value={day}>{day}</MenuItem>)}
+                  </Select>
+                </FormControl>
+              ) : (
+                <TextField fullWidth label="Día" value={formData.day_of_week} disabled />
+              )}
+              <TextField
+                fullWidth label="Aula" value={formData.classroom}
+                onChange={(e) => setFormData({ ...formData, classroom: e.target.value })}
+                InputProps={{ startAdornment: <RoomIcon color="action" sx={{ mr: 1 }} /> }}
+              />
             </Box>
             <Box sx={{ display: 'flex', gap: 2 }}>
-                <TextField fullWidth label="Inicio" type="time" value={formData.start_time}
-                    onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
-                    InputLabelProps={{ shrink: true }} />
-                <TextField fullWidth label="Fin" type="time" value={formData.end_time}
-                    onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
-                    InputLabelProps={{ shrink: true }} />
+              <TextField fullWidth label="Inicio" type="time" value={formData.start_time}
+                onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
+                InputLabelProps={{ shrink: true }} />
+              <TextField fullWidth label="Fin" type="time" value={formData.end_time}
+                onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
+                InputLabelProps={{ shrink: true }} />
             </Box>
           </Box>
         </DialogContent>
         <DialogActions sx={{ p: 3 }}>
-            {editingSchedule && (
-                <Button onClick={() => handleDelete(editingSchedule.id)} color="error" startIcon={<DeleteIcon />}>Eliminar</Button>
-            )}
-            <Button onClick={handleClose}>Cancelar</Button>
-            <Button onClick={handleSubmit} variant="contained" className="admin-button-primary">Guardar</Button>
+          {editingSchedule && (
+            <Button onClick={() => handleDelete(editingSchedule.id)} color="error" startIcon={<DeleteIcon />}>Eliminar</Button>
+          )}
+          <Button onClick={handleClose}>Cancelar</Button>
+          <Button onClick={handleSubmit} variant="contained" className="admin-button-primary">Guardar</Button>
         </DialogActions>
       </Dialog>
+
+      <DialogWrapper
+        confirmDialog={confirmDialog}
+        alertDialog={alertDialog}
+        closeConfirm={closeConfirm}
+        closeAlert={closeAlert}
+      />
     </Box>
   );
 };

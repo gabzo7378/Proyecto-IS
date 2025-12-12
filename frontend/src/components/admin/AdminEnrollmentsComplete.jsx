@@ -26,6 +26,7 @@ import {
   Visibility as VisibilityIcon,
 } from '@mui/icons-material';
 import { enrollmentsAPI } from '../../services/api';
+import './admin-dashboard.css';
 
 const AdminEnrollmentsComplete = () => {
   const [enrollments, setEnrollments] = useState([]);
@@ -77,40 +78,43 @@ const AdminEnrollmentsComplete = () => {
   const filteredEnrollments = enrollments.filter(e => e.status === 'aceptado');
 
   return (
-    <Box>
-      <Typography variant="h4" gutterBottom>
+    <Box className="admin-dashboard">
+      <Typography variant="h4" gutterBottom className="admin-dashboard-title">
         Gestión de Matrículas
       </Typography>
 
       {/* Vista solo de matrículas aceptadas por pago */}
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
+      <TableContainer component={Paper} className="admin-table-container">
+        <Table className="admin-table">
+          <TableHead className="admin-table-head">
             <TableRow>
-              <TableCell>ID</TableCell>
-              <TableCell>Estudiante</TableCell>
-              <TableCell>DNI</TableCell>
-              <TableCell>Curso/Paquete</TableCell>
-              <TableCell>Tipo</TableCell>
-              <TableCell>Estado</TableCell>
+              <TableCell className="admin-table-head-cell">Estudiante</TableCell>
+              <TableCell className="admin-table-head-cell">DNI</TableCell>
+              <TableCell className="admin-table-head-cell">Curso/Paquete</TableCell>
+              <TableCell className="admin-table-head-cell">Tipo</TableCell>
+              <TableCell className="admin-table-head-cell">Estado</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {filteredEnrollments.map((enrollment) => (
-              <TableRow key={enrollment.id}>
-                <TableCell>{enrollment.id}</TableCell>
-                <TableCell>
-                  {enrollment.first_name} {enrollment.last_name}
+              <TableRow key={enrollment.id} className="admin-table-row">
+                <TableCell className="admin-table-cell">
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    {enrollment.first_name} {enrollment.last_name}
+                  </Typography>
                 </TableCell>
-                <TableCell>{enrollment.dni}</TableCell>
-                <TableCell>{enrollment.item_name || '-'}</TableCell>
-                <TableCell>{enrollment.enrollment_type === 'course' ? 'curso' : (enrollment.enrollment_type === 'package' ? 'paquete' : enrollment.enrollment_type)}</TableCell>
-                <TableCell>
+                <TableCell className="admin-table-cell">{enrollment.dni}</TableCell>
+                <TableCell className="admin-table-cell">{enrollment.item_name || '-'}</TableCell>
+                <TableCell className="admin-table-cell">
+                  {enrollment.enrollment_type === 'course' ? 'Curso' : enrollment.enrollment_type === 'package' ? 'Paquete' : enrollment.enrollment_type}
+                </TableCell>
+                <TableCell className="admin-table-cell">
                   <Chip
-                    label={'aceptado'}
+                    label="Aceptado"
                     color={getStatusColor(enrollment.status)}
                     size="small"
+                    className="admin-chip"
                   />
                 </TableCell>
               </TableRow>

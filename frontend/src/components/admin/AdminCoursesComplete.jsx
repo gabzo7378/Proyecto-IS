@@ -31,6 +31,8 @@ import {
 import { MenuItem } from '@mui/material';
 import { coursesAPI, cyclesAPI, teachersAPI } from '../../services/api';
 import './admin-dashboard.css';
+import { useDialog } from '../../hooks/useDialog';
+import DialogWrapper from '../common/DialogWrapper';
 
 const AdminCoursesComplete = () => {
   const [courses, setCourses] = useState([]);
@@ -58,6 +60,8 @@ const AdminCoursesComplete = () => {
     capacity: '',
   });
   const [searchQuery, setSearchQuery] = useState('');
+
+  const { confirmDialog, alertDialog, showConfirm, showAlert, closeConfirm, closeAlert } = useDialog();
 
   // schedule management moved to AdminSchedules
 
@@ -110,7 +114,7 @@ const AdminCoursesComplete = () => {
       setOfferings(offeringsList);
     } catch (err) {
       console.error('Error cargando datos:', err);
-      alert('Error al cargar datos');
+      showAlert('Error al cargar datos', 'error');
     } finally {
       setLoading(false);
     }
@@ -123,7 +127,7 @@ const AdminCoursesComplete = () => {
       setCourseForm({ name: '', description: '', base_price: '' });
       await loadData();
     } catch (err) {
-      alert(err.message || 'Error al crear curso');
+      showAlert(err.message || 'Error al crear curso', 'error');
     }
   };
 
@@ -146,7 +150,7 @@ const AdminCoursesComplete = () => {
       });
       await loadData();
     } catch (err) {
-      alert(err.message || 'Error al crear oferta');
+      showAlert(err.message || 'Error al crear oferta', 'error');
     }
   };
 
@@ -176,27 +180,43 @@ const AdminCoursesComplete = () => {
       setSelectedOffering(null);
       await loadData();
     } catch (err) {
-      alert(err.message || 'Error al actualizar oferta');
+      showAlert(err.message || 'Error al actualizar oferta', 'error');
     }
   };
 
   const handleDeleteCourse = async (id) => {
-    if (!window.confirm('¿Estás seguro de eliminar este curso?')) return;
+    const confirmed = await showConfirm({
+      title: '¿Eliminar curso?',
+      message: 'Esta acción eliminará el curso y todas sus ofertas asociadas.',
+      type: 'error',
+      confirmText: 'Eliminar'
+    });
+    if (!confirmed) return;
+
     try {
       await coursesAPI.delete(id);
+      showAlert('Curso eliminado exitosamente', 'success');
       await loadData();
     } catch (err) {
-      alert(err.message || 'Error al eliminar curso');
+      showAlert(err.message || 'Error al eliminar curso', 'error');
     }
   };
 
   const handleDeleteOffering = async (id) => {
-    if (!window.confirm('¿Estás seguro de eliminar esta oferta?')) return;
+    const confirmed = await showConfirm({
+      title: '¿Eliminar oferta?',
+      message: 'Los estudiantes matriculados en esta oferta perderán acceso.',
+      type: 'error',
+      confirmText: 'Eliminar'
+    });
+    if (!confirmed) return;
+
     try {
       await coursesAPI.deleteOffering(id);
+      showAlert('Oferta eliminada exitosamente', 'success');
       await loadData();
     } catch (err) {
-      alert(err.message || 'Error al eliminar oferta');
+      showAlert(err.message || 'Error al eliminar oferta', 'error');
     }
   };
 
@@ -520,6 +540,13 @@ const AdminCoursesComplete = () => {
           <Button variant="contained" onClick={handleUpdateOffering} className="admin-button admin-button-primary">Guardar</Button>
         </DialogActions>
       </Dialog>
+
+      <DialogWrapper
+        confirmDialog={confirmDialog}
+        alertDialog={alertDialog}
+        closeConfirm={closeConfirm}
+        closeAlert={closeAlert}
+      />
     </Box>
   );
 };
