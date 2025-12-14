@@ -23,7 +23,7 @@ app = FastAPI(title="Academia API", version="2.0.0")
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify exact origins
+    allow_origins=["*"],  # En producción, especifica los orígenes exactos
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -65,4 +65,11 @@ async def health():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=4000)
+    # CAMBIO IMPORTANTE: Railway asigna el puerto automáticamente
+    port = int(os.environ.get("PORT", 4000))
+    uvicorn.run(
+        app, 
+        host="0.0.0.0", 
+        port=port,
+        log_level="info"
+    )
