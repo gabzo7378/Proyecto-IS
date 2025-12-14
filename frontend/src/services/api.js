@@ -1,8 +1,10 @@
 // src/services/api.js
 // Servicio centralizado para manejar todas las peticiones API
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
-console.log("BASE DE LA API UTILIZADA:", API_BASE_URL); // Añade esto
+// TEMPORAL: Hardcodeado para Railway
+const API_BASE_URL = 'https://backend-is-production-ffab.up.railway.app/api';
+
+console.log('🔧 API_BASE_URL:', API_BASE_URL);
 
 // Función helper para hacer peticiones
 async function request(endpoint, options = {}) {
@@ -22,19 +24,30 @@ async function request(endpoint, options = {}) {
     delete config.headers['Content-Type'];
   }
 
+  const fullUrl = `${API_BASE_URL}${endpoint}`;
+
   try {
-    // Agrega el prefijo /api/ justo antes del endpoint
-    const url = `${BASE_URL}/api${endpoint}`; // <-- ¡CAMBIO AQUÍ!
-    const response = await fetch(url, config); 
+    console.log(`📡 ${options.method || 'GET'}: ${fullUrl}`);
+    
+    const response = await fetch(fullUrl, config);
+    
+    console.log(`📨 Status: ${response.status}`);
+    
     const data = await response.json();
 
-    if (!response.ok) { 
-      throw new Error(data.message || 'Error en la petición');
+    if (!response.ok) {
+      console.error('❌ Error:', data);
+      throw new Error(data.message || data.detail || 'Error en la petición');
     }
 
+    console.log('✅ Success');
     return data;
   } catch (error) {
-    console.error('API Error:', error);
+    console.error('❌ API Error:', {
+      endpoint,
+      fullUrl,
+      error: error.message
+    });
     throw error;
   }
 }
@@ -276,4 +289,3 @@ export default {
   schedulesAPI,
   adminAPI,
 };
-
