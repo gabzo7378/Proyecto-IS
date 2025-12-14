@@ -1,7 +1,8 @@
 // src/services/api.js
 // Servicio centralizado para manejar todas las peticiones API
 
-const API_BASE_URL = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api`: 'http://localhost:4000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+console.log("BASE DE LA API UTILIZADA:", API_BASE_URL); // Añade esto
 
 // Función helper para hacer peticiones
 async function request(endpoint, options = {}) {
@@ -22,10 +23,12 @@ async function request(endpoint, options = {}) {
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+    // Agrega el prefijo /api/ justo antes del endpoint
+    const url = `${BASE_URL}/api${endpoint}`; // <-- ¡CAMBIO AQUÍ!
+    const response = await fetch(url, config); 
     const data = await response.json();
 
-    if (!response.ok) {
+    if (!response.ok) { 
       throw new Error(data.message || 'Error en la petición');
     }
 
