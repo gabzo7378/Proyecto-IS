@@ -1,6 +1,7 @@
 // src/components/student/StudentDashboard.jsx
 import React, { useEffect, useState } from 'react';
 import { Box, Button, Typography, Grid, Card, CardContent, CardActions, Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material';
+import { API_BASE_URL } from '../../config/api';
 
 const StudentDashboard = () => {
   const [courses, setCourses] = useState([]);
@@ -14,21 +15,21 @@ const StudentDashboard = () => {
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    fetch('http://localhost:4000/api/courses', { headers: { 'Authorization': `Bearer ${token}` } })
+    fetch(`${API_BASE_URL}/api/courses`, { headers: { 'Authorization': `Bearer ${token} ` } })
       .then(r => r.json()).then(setCourses).catch(e => console.error(e));
 
-    fetch('http://localhost:4000/api/packages')
+    fetch(`${API_BASE_URL}/api/packages`)
       .then(r => r.json()).then(setPackages).catch(e => console.error(e));
 
     // Obtener ciclo activo para mostrar fechas de inicio y fin
-    fetch('http://localhost:4000/api/cycles/active')
+    fetch(`${API_BASE_URL}/api/cycles/active`)
       .then(r => r.json())
       .then(setActiveCycle)
       .catch((e) => console.error('Error obteniendo ciclo activo', e));
   }, []);
 
   const toggleSelect = (type, id, name, price) => {
-    const key = `${type}-${id}`;
+    const key = `${type} -${id} `;
     const exists = selected.find(s => s.key === key);
     if (exists) setSelected(selected.filter(s => s.key !== key));
     else setSelected([...selected, { key, type, id, name, price }]);
@@ -40,9 +41,9 @@ const StudentDashboard = () => {
     try {
       const token = localStorage.getItem('token');
       const items = selected.map(i => ({ type: i.type, id: i.id }));
-      const res = await fetch('http://localhost:4000/api/enrollments', {
+      const res = await fetch(`${API_BASE_URL}/api/enrollments`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token} ` },
         body: JSON.stringify({ items })
       });
       const data = await res.json();
@@ -65,9 +66,9 @@ const StudentDashboard = () => {
       form.append('voucher', voucherFile);
       form.append('enrollment_id', enrollmentId);
 
-      const res = await fetch('http://localhost:4000/api/payments/upload', {
+      const res = await fetch(`${API_BASE_URL}/api/payments/upload`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: { 'Authorization': `Bearer ${token} ` },
         body: form
       });
       const data = await res.json();
@@ -119,7 +120,7 @@ const StudentDashboard = () => {
               </CardContent>
               <CardActions>
                 <Button size="small" onClick={() => toggleSelect('course', c.id, c.name, c.price)}>
-                  {selected.find(s => s.key === `course-${c.id}`) ? 'Quitar' : 'Seleccionar'}
+                  {selected.find(s => s.key === `course - ${c.id} `) ? 'Quitar' : 'Seleccionar'}
                 </Button>
               </CardActions>
             </Card>
@@ -149,7 +150,7 @@ const StudentDashboard = () => {
               </CardContent>
               <CardActions>
                 <Button size="small" onClick={() => toggleSelect('package', p.id, p.name, p.price_total)}>
-                  {selected.find(s => s.key === `package-${p.id}`) ? 'Quitar' : 'Seleccionar'}
+                  {selected.find(s => s.key === `package - ${p.id} `) ? 'Quitar' : 'Seleccionar'}
                 </Button>
               </CardActions>
             </Card>

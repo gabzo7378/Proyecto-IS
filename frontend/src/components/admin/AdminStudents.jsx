@@ -4,6 +4,7 @@ import { Box, Typography, Paper, Table, TableContainer, TableHead, TableRow, Tab
 import { Search as SearchIcon } from '@mui/icons-material';
 import { coursesAPI, packagesAPI, enrollmentsAPI } from '../../services/api';
 import './admin-dashboard.css';
+import { API_BASE_URL } from '../../config/api';
 
 const AdminStudents = () => {
   const [students, setStudents] = useState([]);
@@ -16,7 +17,7 @@ const AdminStudents = () => {
   const fetchStudents = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:4000/api/students', { headers: { 'Authorization': `Bearer ${token}` } });
+      const res = await fetch(`${API_BASE_URL}/api/students`, { headers: { 'Authorization': `Bearer ${token}` } });
       const data = await res.json();
       if (res.ok) setStudents(data);
     } catch (err) {

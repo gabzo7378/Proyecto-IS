@@ -25,6 +25,7 @@ import { paymentsAPI } from '../../services/api';
 import ConfirmDialog from '../common/ConfirmDialog';
 import PromptDialog from '../common/PromptDialog';
 import './admin-dashboard.css';
+import { API_BASE_URL } from '../../config/api';
 
 const AdminPaymentsComplete = () => {
   const [payments, setPayments] = useState([]);
@@ -186,7 +187,7 @@ const AdminPaymentsComplete = () => {
                   {payment.voucher_url ? (
                     <Button
                       size="small"
-                      href={`http://localhost:4000${payment.voucher_url}`}
+                      href={`${API_BASE_URL}${payment.voucher_url}`}
                       target="_blank"
                       startIcon={<VisibilityIcon />}
                     >

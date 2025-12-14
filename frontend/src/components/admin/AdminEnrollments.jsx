@@ -1,6 +1,7 @@
 // src/components/admin/AdminEnrollments.jsx
 import React, { useEffect, useState } from 'react';
 import { Box, Typography, Paper, Table, TableHead, TableRow, TableCell, TableBody, Button } from '@mui/material';
+import { API_BASE_URL } from '../../config/api';
 
 const AdminEnrollments = () => {
   const [enrollments, setEnrollments] = useState([]);
@@ -9,7 +10,7 @@ const AdminEnrollments = () => {
   const fetchEnrollments = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:4000/api/enrollments/admin', { headers: { 'Authorization': `Bearer ${token}` } });
+      const res = await fetch(`${API_BASE_URL}/api/enrollments/admin`, { headers: { 'Authorization': `Bearer ${token}` } });
       const data = await res.json();
       if (res.ok) setEnrollments(data);
       else setError(data.message || 'Error cargando matrículas');
@@ -49,13 +50,13 @@ const AdminEnrollments = () => {
                 <TableCell>{e.type}</TableCell>
                 <TableCell>{e.status}</TableCell>
                 <TableCell>{e.payment_status || 'sin pago'}</TableCell>
-                <TableCell>{e.voucher_url ? <a href={`http://localhost:4000${e.voucher_url}`} target="_blank" rel="noreferrer">Ver</a> : '—'}</TableCell>
+                <TableCell>{e.voucher_url ? <a href={`${API_BASE_URL}${e.voucher_url}`} target="_blank" rel="noreferrer">Ver</a> : '—'}</TableCell>
                 <TableCell>
                   {e.payment_status === 'pendiente' && (
                     <Button variant="contained" size="small" onClick={async () => {
                       try {
                         const token = localStorage.getItem('token');
-                        const res = await fetch('http://localhost:4000/api/payments/approve', {
+                        const res = await fetch(`${API_BASE_URL}/api/payments/approve`, {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                           body: JSON.stringify({ enrollment_id: e.id })

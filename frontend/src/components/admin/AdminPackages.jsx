@@ -32,6 +32,7 @@ import { packagesAPI, cyclesAPI, coursesAPI } from '../../services/api';
 import { Checkbox, ListItemText } from '@mui/material';
 import { MenuItem } from '@mui/material';
 import './admin-dashboard.css';
+import { API_BASE_URL } from '../../config/api';
 
 const AdminPackages = () => {
   const [packages, setPackages] = useState([]);
@@ -60,7 +61,7 @@ const AdminPackages = () => {
   const fetchPackages = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:4000/api/packages', { headers: { 'Authorization': `Bearer ${token}` } });
+      const res = await fetch(`${API_BASE_URL}/api/packages`, { headers: { 'Authorization': `Bearer ${token}` } });
       const data = await res.json();
       if (res.ok) setPackages(data);
     } catch (err) { console.error(err); }
@@ -99,7 +100,7 @@ const AdminPackages = () => {
   const save = async (id) => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:4000/api/packages/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/api/packages/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(editing)
@@ -115,7 +116,7 @@ const AdminPackages = () => {
     if (!confirm('¿Eliminar paquete?')) return;
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:4000/api/packages/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+      const res = await fetch(`${API_BASE_URL}/api/packages/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Error');
       fetchPackages();

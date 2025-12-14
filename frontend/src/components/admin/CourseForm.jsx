@@ -18,6 +18,7 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
+import { API_BASE_URL } from '../../config/api';
 
 const validationSchema = yup.object({
   name: yup.string().required('El nombre del curso es requerido'),
@@ -46,7 +47,7 @@ const CourseForm = () => {
     const fetchTeachers = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:4000/api/teachers', {
+        const response = await fetch(`${API_BASE_URL}/api/teachers`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -76,7 +77,7 @@ const CourseForm = () => {
       try {
         const token = localStorage.getItem('token');
         // Crear el curso
-        const courseResponse = await fetch('http://localhost:4000/api/courses', {
+        const courseResponse = await fetch(`${API_BASE_URL}/api/courses`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -90,7 +91,7 @@ const CourseForm = () => {
         if (courseResponse.ok) {
           // Crear los horarios para el curso
           const schedulePromises = schedules.map(schedule =>
-            fetch('http://localhost:4000/api/schedules', {
+            fetch(`${API_BASE_URL}/api/schedules`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
