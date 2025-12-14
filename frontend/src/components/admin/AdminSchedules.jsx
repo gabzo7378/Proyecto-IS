@@ -17,6 +17,7 @@ import {
 import './admin-dashboard.css';
 import { useDialog } from '../../hooks/useDialog';
 import DialogWrapper from '../common/DialogWrapper';
+import { API_BASE_URL } from '../../config/api';
 
 const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 const HOURS = Array.from({ length: 15 }, (_, i) => i + 7); // 7:00 - 21:00
@@ -64,7 +65,7 @@ const AdminSchedules = () => {
 
       try {
         // 1. Cargar Cursos (para el dropdown de "Ver por Curso" y el formulario)
-        const resCourses = await fetch('http://localhost:4000/api/courses', { headers });
+        const resCourses = await fetch(`${API_BASE_URL}/api/courses`, { headers });
         const dataCourses = await resCourses.json();
 
         // Aplanar ofertas de cursos
@@ -77,7 +78,7 @@ const AdminSchedules = () => {
         setOfferings(flatOfferings);
 
         // 2. Cargar Paquetes (para el dropdown de "Ver por Paquete")
-        const resPackages = await fetch('http://localhost:4000/api/packages/offerings', { headers });
+        const resPackages = await fetch(`${API_BASE_URL}/api/packages/offerings`, { headers });
         const dataPackages = await resPackages.json();
         setPackageOfferings(dataPackages);
 
@@ -100,9 +101,9 @@ const AdminSchedules = () => {
 
       // Usamos los endpoints específicos definidos en schedules.py
       if (filterType === 'course') {
-        url = `http://localhost:4000/api/schedules/offering/${selectedFilterId}`;
+        url = `${API_BASE_URL}/api/schedules/offering/${selectedFilterId}`;
       } else {
-        url = `http://localhost:4000/api/schedules/package-offering/${selectedFilterId}`;
+        url = `${API_BASE_URL}/api/schedules/package-offering/${selectedFilterId}`;
       }
 
       try {
@@ -163,8 +164,8 @@ const AdminSchedules = () => {
       const token = localStorage.getItem('token');
       const method = editingSchedule ? 'PUT' : 'POST';
       const url = editingSchedule
-        ? `http://localhost:4000/api/schedules/${editingSchedule.id}`
-        : 'http://localhost:4000/api/schedules';
+        ? `${API_BASE_URL}/api/schedules/${editingSchedule.id}`
+        : `${API_BASE_URL}/api/schedules`;
 
       const payload = { ...formData };
 
@@ -206,7 +207,7 @@ const AdminSchedules = () => {
 
     try {
       const token = localStorage.getItem('token');
-      await fetch(`http://localhost:4000/api/schedules/${id}`, {
+      await fetch(`${API_BASE_URL}/api/schedules/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });

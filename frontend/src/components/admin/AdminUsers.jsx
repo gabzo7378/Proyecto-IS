@@ -15,6 +15,7 @@ import {
 } from '@mui/material';
 import { Search as SearchIcon } from '@mui/icons-material';
 import './admin-dashboard.css';
+import { API_BASE_URL } from '../../config/api';
 
 const AdminUsers = () => {
     const [students, setStudents] = useState([]);
@@ -23,7 +24,7 @@ const AdminUsers = () => {
     const fetchStudents = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('http://localhost:4000/api/students', {
+            const res = await fetch(`${API_BASE_URL}/api/students`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             const data = await res.json();

@@ -1,6 +1,7 @@
 // src/components/admin/AdminCourses.jsx
 import React, { useEffect, useState } from 'react';
 import { Box, Typography, Paper, Table, TableHead, TableRow, TableCell, TableBody, TextField, Button } from '@mui/material';
+import { API_BASE_URL } from '../../config/api';
 
 const AdminCourses = () => {
   const [courses, setCourses] = useState([]);
@@ -10,7 +11,7 @@ const AdminCourses = () => {
   const fetchCourses = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:4000/api/courses', { headers: { 'Authorization': `Bearer ${token}` } });
+      const res = await fetch(`${API_BASE_URL}/api/courses`, { headers: { 'Authorization': `Bearer ${token}` } });
       const data = await res.json();
       if (res.ok) setCourses(data);
     } catch (err) {
@@ -25,7 +26,7 @@ const AdminCourses = () => {
   const save = async (id) => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:4000/api/courses/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/api/courses/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(editing)
@@ -44,7 +45,7 @@ const AdminCourses = () => {
     if (!confirm('¿Eliminar curso?')) return;
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:4000/api/courses/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/api/courses/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });

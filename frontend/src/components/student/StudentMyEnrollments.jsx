@@ -29,6 +29,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import './student-dashboard.css';
 import { useDialog } from '../../hooks/useDialog';
 import DialogWrapper from '../common/DialogWrapper';
+import { API_BASE_URL } from '../../config/api';
 
 const StudentMyEnrollments = () => {
   const { user } = useAuth();
@@ -299,7 +300,7 @@ const StudentMyEnrollments = () => {
                                       size="small"
                                       variant="outlined"
                                       className="student-btn-secondary"
-                                      href={`http://localhost:4000${installment.voucher_url}`}
+                                      href={`${API_BASE_URL}${installment.voucher_url}`}
                                       target="_blank"
                                       sx={{ textTransform: 'none' }}
                                     >

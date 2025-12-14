@@ -17,6 +17,7 @@ import {
 } from '@mui/material';
 import { KeyboardArrowDown, KeyboardArrowUp } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
+import { API_BASE_URL } from '../../config/api';
 
 const CourseRow = ({ course }) => {
   const [open, setOpen] = useState(false);
@@ -83,12 +84,12 @@ const CourseList = () => {
     const fetchCourses = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:4000/api/courses', {
+        const response = await fetch(`${API_BASE_URL}/api/courses`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         });
-        
+
         if (response.ok) {
           const data = await response.json();
           setCourses(data);

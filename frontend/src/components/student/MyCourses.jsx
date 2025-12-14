@@ -1,6 +1,7 @@
 // src/components/student/MyCourses.jsx
 import React, { useEffect, useState } from 'react';
 import { Box, Typography, Card, CardContent, Grid } from '@mui/material';
+import { API_BASE_URL } from '../../config/api';
 
 const MyCourses = () => {
   const [enrollments, setEnrollments] = useState([]);
@@ -9,7 +10,7 @@ const MyCourses = () => {
     const fetchMy = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch('http://localhost:4000/api/enrollments', { headers: { 'Authorization': `Bearer ${token}` } });
+        const res = await fetch(`${API_BASE_URL}/api/enrollments`, { headers: { 'Authorization': `Bearer ${token}` } });
         const data = await res.json();
         if (res.ok) setEnrollments(data);
       } catch (err) {
@@ -32,7 +33,7 @@ const MyCourses = () => {
                 <Typography>Precio: S/. {e.item_price}</Typography>
                 <Typography>Estado matrícula: {e.status}</Typography>
                 <Typography>Pago: {e.payment_status} {e.payment_id ? `(id: ${e.payment_id})` : ''}</Typography>
-                {e.voucher_url && <Typography>Voucher: <a href={`http://localhost:4000${e.voucher_url}`} target="_blank" rel="noreferrer">Ver</a></Typography>}
+                {e.voucher_url && <Typography>Voucher: <a href={`${API_BASE_URL}${e.voucher_url}`} target="_blank" rel="noreferrer">Ver</a></Typography>}
               </CardContent>
             </Card>
           </Grid>

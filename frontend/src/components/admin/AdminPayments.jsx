@@ -1,6 +1,7 @@
 // src/components/admin/AdminPayments.jsx
 import React, { useEffect, useState } from 'react';
 import { Box, Typography, Table, TableBody, TableCell, TableHead, TableRow, Button, Paper } from '@mui/material';
+import { API_BASE_URL } from '../../config/api';
 
 const AdminPayments = () => {
   const [payments, setPayments] = useState([]);
@@ -9,7 +10,7 @@ const AdminPayments = () => {
   const fetchPayments = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:4000/api/payments?status=pendiente', {
+      const res = await fetch(`${API_BASE_URL}/api/payments?status=pendiente`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
@@ -26,7 +27,7 @@ const AdminPayments = () => {
   const handleApprove = async (enrollmentId) => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:4000/api/payments/approve', {
+      const res = await fetch(`${API_BASE_URL}/api/payments/approve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ enrollment_id: enrollmentId })
@@ -64,7 +65,7 @@ const AdminPayments = () => {
                 <TableCell>{p.first_name} {p.last_name} ({p.dni})</TableCell>
                 <TableCell>{p.item_name} ({p.type})</TableCell>
                 <TableCell>S/. {p.amount}</TableCell>
-                <TableCell>{p.voucher_url ? <a href={`http://localhost:4000${p.voucher_url}`} target="_blank" rel="noreferrer">Ver</a> : 'Sin voucher' }</TableCell>
+                <TableCell>{p.voucher_url ? <a href={`${API_BASE_URL}${p.voucher_url}`} target="_blank" rel="noreferrer">Ver</a> : 'Sin voucher'}</TableCell>
                 <TableCell>
                   <Button variant="contained" size="small" onClick={() => handleApprove(p.enrollment_id)}>Aprobar</Button>
                 </TableCell>
