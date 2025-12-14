@@ -1,7 +1,7 @@
 // src/services/api.js
 // Servicio centralizado para manejar todas las peticiones API
 
-const API_BASE_URL = 'https://backend-is-production-ffab.up.railway.app/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api`: 'http://localhost:4000/api';
 
 // Función helper para hacer peticiones
 async function request(endpoint, options = {}) {
