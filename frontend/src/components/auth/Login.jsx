@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 import { useAuth } from '../../contexts/AuthContext';
+import { studentsAPI } from '../../services/api'; // ✅ IMPORTAR EL SERVICIO
 import './Auth.css';
 
 // Esquemas de validación
@@ -27,11 +28,10 @@ const Login = () => {
   const location = useLocation();
   const { login } = useAuth();
   
-  const [isActive, setIsActive] = useState(false); // Toggle entre Login/Register
-  const [showRules, setShowRules] = useState(false); // Modal de normas
-  const [notification, setNotification] = useState(null); // Estado para notificaciones
+  const [isActive, setIsActive] = useState(false);
+  const [showRules, setShowRules] = useState(false);
+  const [notification, setNotification] = useState(null);
 
-  // Función para mostrar notificaciones temporales
   const showNotification = (type, title, message) => {
     setNotification({ type, title, message });
     setTimeout(() => {
@@ -55,7 +55,6 @@ const Login = () => {
         const data = await login(values.dni, values.password);
         showNotification('success', '¡Bienvenido!', 'Iniciando sesión...');
         
-        // Pequeño delay para ver la animación antes de redirigir
         setTimeout(() => {
           const role = data.user.role;
           if (role === 'admin') navigate('/admin/dashboard');
@@ -69,7 +68,7 @@ const Login = () => {
     },
   });
 
-  // Formulario de Registro
+  // ✅ Formulario de Registro - CORREGIDO
   const registerFormik = useFormik({
     initialValues: {
       dni: '', first_name: '', last_name: '', phone: '',
@@ -78,29 +77,20 @@ const Login = () => {
     validationSchema: registerSchema,
     onSubmit: async (values) => {
       try {
-        const response = await fetch('http://localhost:4000/api/students/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(values),
-        });
-
-        const data = await response.json();
+        // ✅ USAR EL SERVICIO API EN LUGAR DE FETCH HARDCODEADO
+        await studentsAPI.register(values);
         
-        if (response.ok) {
-          setShowRules(true); 
-          registerFormik.resetForm();
-        } else {
-          showNotification('error', 'Error de Registro', data.message || 'No se pudo crear la cuenta');
-        }
+        setShowRules(true); 
+        registerFormik.resetForm();
       } catch (err) {
-        showNotification('error', 'Error de Conexión', 'Intente nuevamente más tarde');
+        showNotification('error', 'Error de Registro', err.message || 'No se pudo crear la cuenta');
       }
     },
   });
 
   const handleAcceptRules = () => {
     setShowRules(false);
-    setIsActive(false); // Cambiar a panel de Login
+    setIsActive(false);
     showNotification('success', '¡Registro Exitoso!', 'Ahora puedes iniciar sesión');
   };
 
@@ -108,7 +98,7 @@ const Login = () => {
     <div className="auth-page">
       <a href="/" className="back-to-home">← Volver al Inicio</a>
 
-      {/* Componente de Notificación Flotante */}
+      {/* Notificación Flotante */}
       {notification && (
         <div className="notification-container">
           <div className={`notification-card ${notification.type}`}>
@@ -123,7 +113,7 @@ const Login = () => {
         </div>
       )}
 
-      {/* Modal de Normas Institucionales */}
+      {/* Modal de Normas */}
       {showRules && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -151,9 +141,7 @@ const Login = () => {
                 <li>Mantener el orden y limpieza en las aulas.</li>
               </ul>
               <ul>
-                <li>
-                  Al Matricularse usted esta aceptando estas normas y cualquier incumplimiento sera notificado al apoderado
-                </li>
+                <li>Al Matricularse usted esta aceptando estas normas y cualquier incumplimiento sera notificado al apoderado</li>
               </ul>
             </div>
             <div className="modal-footer">
@@ -195,7 +183,6 @@ const Login = () => {
             
             <button type="submit">Iniciar Sesión</button>
 
-            {/* OPCIÓN: NO TENGO CUENTA */}
             <div className="switch-text-container">
               <p>¿No tienes una cuenta?</p>
               <span className="switch-link" onClick={() => setIsActive(true)}>
@@ -278,7 +265,6 @@ const Login = () => {
 
             <button type="submit">Registrarse</button>
 
-            {/* OPCIÓN: YA TENGO CUENTA */}
             <div className="switch-text-container">
               <p>¿Ya tienes una cuenta?</p>
               <span className="switch-link" onClick={() => setIsActive(false)}>
